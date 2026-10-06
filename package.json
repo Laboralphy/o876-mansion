@@ -1,0 +1,31 @@
+{
+  "name": "mansion",
+  "version": "1.0.0",
+  "private": true,
+  "description": "MANSION - a ghost photography game built on @laboralphy/raycaster386",
+  "type": "module",
+  "author": {
+    "name": "Raphaël Marandet",
+    "email": "raphael.marandet@gmail.com"
+  },
+  "license": "ISC",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "vue-tsc --noEmit"
+  },
+  "dependencies": {
+    "@laboralphy/raycaster386": "^1.0.0",
+    "howler": "^2.2.4",
+    "pinia": "^4.0.3",
+    "vue": "^3.5.43"
+  },
+  "devDependencies": {
+    "@types/howler": "^2.2.13",
+    "@vitejs/plugin-vue": "^6.0.9",
+    "typescript": "~5.9",
+    "vite": "^8.3.3",
+    "vue-tsc": "^3.3.12"
+  }
+}
