@@ -16,11 +16,11 @@ import Events from '@/libs/events';
 
 class PointerLock {
     _events: Events;
-    _handlers: any;
+    _handlers: { mousemove: (event: MouseEvent) => void };
     bEnabled: boolean;
-    bInitialized: any;
+    bInitialized: boolean;
     bLocked: boolean;
-    oElement: any;
+    oElement: HTMLElement;
 
 
     constructor() {
@@ -95,7 +95,7 @@ class PointerLock {
      * Requests the browser to lock the mouse pointer at the center of the specified HTML Element
      * @param oElement {HTMLElement}
      */
-    requestPointerLock(oElement) {
+    requestPointerLock(oElement: HTMLElement): void {
         if (!this.bEnabled) {
             return;
         }
@@ -103,11 +103,12 @@ class PointerLock {
             return;
         }
         this.oElement = oElement;
-        oElement.requestPointerLock = oElement.requestPointerLock || oElement.mozRequestPointerLockWithKeys || oElement.mozRequestPointerLock;
+        const el = oElement as any; // moz prefixed methods are not in the DOM typings
+        el.requestPointerLock = el.requestPointerLock || el.mozRequestPointerLockWithKeys || el.mozRequestPointerLock;
         // recent browsers return a promise, which rejects when the request is refused
         // (e.g. clicking again too soon after leaving pointer lock with Escape) : this is reported as
         // a pointerlockerror event anyway, so the rejection is just swallowed here.
-        const p = oElement.requestPointerLock();
+        const p = el.requestPointerLock();
         if (p && typeof p.catch === 'function') {
             p.catch(() => {});
         }
@@ -129,7 +130,7 @@ class PointerLock {
      * @param sEvent {string}
      * @param payload {*}
      */
-    trigger(sEvent, payload = undefined) {
+    trigger(sEvent: string, payload: unknown = undefined): void {
         this._events.emit(sEvent, payload);
     }
 
@@ -140,7 +141,7 @@ class PointerLock {
      * 2) we are exiting PointerLock mode (because we requested to, with the exitPointerLock function)
      * @param event {Event}
      */
-    eventChange(event) {
+    eventChange(event: Event): void {
         let oPointerLockElement = document.pointerLockElement || (document as any).mozPointerLockElement;
         if (oPointerLockElement) {
             this._handlers.mousemove = event => this.eventMouseMove(event);
@@ -160,18 +161,18 @@ class PointerLock {
      * This handler deals with error
      * @param event {Event}
      */
-    eventError(event) {
+    eventError(event: Event): void {
         console.error('PointerLock error', event);
         this.trigger('error', {error: event});
     }
 
     /**
      * This handler deals with mouse movement, tranforming them, transmitting them to client application
-     * @param event {Event}
+     * @param event {MouseEvent}
      */
-    eventMouseMove(event) {
-        const x = event.movementX || event.mozMovementX || 0;
-        const y = event.movementY || event.mozMovementY || 0;
+    eventMouseMove(event: MouseEvent): void {
+        const x = event.movementX || (event as any).mozMovementX || 0;
+        const y = event.movementY || (event as any).mozMovementY || 0;
         this.trigger('mousemove', {x, y});
     }
 }

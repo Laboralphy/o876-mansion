@@ -16,16 +16,28 @@ import Events from '@/libs/events';
  * DON'T FORGET
  * to set request-pointer-lock attributes on overlay items you want them to enter pointer lock when clicked on.
  */
+export type ScreenStructure = {
+    surface: HTMLCanvasElement,
+    overlay?: HTMLElement
+};
+
+export type ScreenSetup = {
+    autostretch?: boolean,
+    pointerlock?: boolean,
+    fullscreen?: boolean,
+    pointerlockAttribute?: string
+};
+
 class Screen {
     _enablePointerLock: boolean;
     _events: Events;
-    _handlers: any;
-    _overlay: any;
-    _pointerlock: any;
-    _surface: any;
+    _handlers: { resize: () => void, click: (event: MouseEvent) => void };
+    _overlay: ManagedElement;
+    _pointerlock: PointerLock;
+    _surface: ManagedElement<HTMLCanvasElement>;
 
 
-    constructor(comp) {
+    constructor(comp: ScreenStructure) {
         this._events = new Events();
         this._handlers = {
             resize: null,
@@ -51,15 +63,15 @@ class Screen {
         this._events.off(event, listener);
     }
 
-    get surface() {
+    get surface(): HTMLCanvasElement {
         return this._surface.element;
     }
 
-    get overlay() {
+    get overlay(): HTMLElement {
         return !!this._overlay ? this._overlay.element : null;
     }
 
-    get pointerlock() {
+    get pointerlock(): PointerLock {
         return this._pointerlock;
     }
 
@@ -74,15 +86,15 @@ class Screen {
         }
     }
 
-    _getClickEventOffset(event) {
-        let el = event.target,
+    _getClickEventOffset(event: MouseEvent): { x: number, y: number } {
+        let el = event.target as HTMLElement,
             x = 0,
             y = 0;
 
         while (el && !isNaN(el.offsetLeft) && !isNaN(el.offsetTop)) {
             x += el.offsetLeft - el.scrollLeft;
             y += el.offsetTop - el.scrollTop;
-            el = el.offsetParent;
+            el = el.offsetParent as HTMLElement;
         }
 
         x = event.clientX - x;
@@ -98,7 +110,7 @@ class Screen {
     buildStructure({
         surface,
         overlay
-    }) {
+    }: ScreenStructure): void {
         // game surface
         const mSurface = new ManagedElement(surface);
         this._surface = mSurface;
@@ -125,7 +137,7 @@ class Screen {
         pointerlock = false,
         fullscreen = false,
         pointerlockAttribute = 'data-request-pointer-lock'
-    }) {
+    }: ScreenSetup): void {
         if (!!this._handlers.resize) {
             window.removeEventListener('resize', this._handlers.resize);
             this._handlers.resize = null;
@@ -151,7 +163,7 @@ class Screen {
                     if (this._enablePointerLock) {
                         const oClicked = this._getClickEventOffset(event);
                         this._events.emit('click', oClicked);
-                        const oTarget = event.target;
+                        const oTarget = event.target as HTMLElement;
                         // compare with the DOM elements, not with their ManagedElement wrappers
                         if (oTarget === this.surface || oTarget === this.overlay || oTarget.hasAttribute(pointerlockAttribute)) {
                             this._pointerlock.requestPointerLock(this.surface);

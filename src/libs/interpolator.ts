@@ -8,6 +8,6 @@
  * @returns {number}
  */
 
-export function linear(v, x1, y1, x3, y3) {
+export function linear(v: number, x1: number, y1: number, x3: number, y3: number): number {
     return ((v - x1) * (y3 - y1)) / (x3 - x1) + y1;
 }

@@ -2,7 +2,7 @@ class RangeCollider {
     _p1: number;
     _p2: number;
 
-    constructor(p1 = null, p2 = null) {
+    constructor(p1: number = null, p2: number = null) {
         this._p1 = 0;
         this._p2 = 1;
         if (p1 !== null && p2 !== null) {
@@ -10,7 +10,7 @@ class RangeCollider {
         }
     }
 
-    setRange(p1, p2) {
+    setRange(p1: number, p2: number): void {
         if (p1 > p2) {
             throw new Error('invalid range : first param must be lower or equal than second param');
         }
@@ -18,7 +18,7 @@ class RangeCollider {
         this._p2 = p2;
     }
 
-    getPointSector(x) {
+    getPointSector(x: number): number {
         const p1 = this._p1;
         const p2 = this._p2;
         if (x < p1) {
@@ -36,7 +36,7 @@ class RangeCollider {
      * @param x2 {number}
      * @return {number}
      */
-    getRangeSectors(x1, x2) {
+    getRangeSectors(x1: number, x2: number): number {
         const r1 = this.getPointSector(Math.min(x1, x2));
         const r2 = this.getPointSector(Math.max(x1, x2));
         return r1 * 10 + r2;
@@ -47,7 +47,7 @@ class RangeCollider {
      * @param x1
      * @param x2
      */
-    getLeftRelic(x1, x2) {
+    getLeftRelic(x1: number, x2: number): number {
         if (x1 > x2) {
             throw new Error('range is invalid : ' + x1 + ', ' + x2 + ' - first boundary must be lower than second one');
         }
@@ -71,7 +71,7 @@ class RangeCollider {
      * @param x2
      * @return {number}
      */
-    getRightRelic(x1, x2) {
+    getRightRelic(x1: number, x2: number): number {
         if (x1 > x2) {
             throw new Error('range is invalid : ' + x1 + ', ' + x2 + ' - first boundary must be lower than second one');
         }
@@ -89,7 +89,7 @@ class RangeCollider {
         }
     }
 
-    getCenterRelic(x1, x2) {
+    getCenterRelic(x1: number, x2: number): number {
         if (x1 > x2) {
             throw new Error('range is invalid : ' + x1 + ', ' + x2 + ' - first boundary must be lower than second one');
         }

@@ -28,7 +28,7 @@ npx vue-tsc --noEmit --noImplicitAny
 
 | | step | files | functions | parameters |
 |---|---|---:|---:|---:|
-| [ ] | Step 1 — leaf libraries | 20 | 115 | 219 |
+| [x] | Step 1 — leaf libraries | 20 | 115 | 219 |
 | [ ] | Step 2 — engine (compat layer over raycaster386) | 14 | 52 | 68 |
 | [ ] | Step 3 — stores | 5 | 43 | 56 |
 | [ ] | Step 4 — game core classes | 8 | 96 | 171 |
@@ -37,6 +37,8 @@ npx vue-tsc --noEmit --noImplicitAny
 | [ ] | Step 7 — scripts | 40 | 56 | 205 |
 | [ ] | Step 8 — Vue components | 9 | 22 | 23 |
 | | **total** | | **460** | **849** |
+
+**Remaining after step 1 : 625** (some parameters of later steps were typed for free by the typed libraries).
 
 ## Step 1 — leaf libraries
 

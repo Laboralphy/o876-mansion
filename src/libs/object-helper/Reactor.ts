@@ -5,24 +5,29 @@ const REACTOR_PROP_NAME = '__reactor__';
 const REACTOR_CHANGED_EVENT_NAME = 'changed';
 
 /**
+ * Array methods that mutate the array : they are wrapped to trigger notifications
+ */
+type ArrayMutator = 'push' | 'pop' | 'shift' | 'unshift' | 'sort' | 'splice' | 'reverse';
+
+/**
  * This class is use to observe all mutations against an object.
  */
 class Reactor {
     _events: Events;
-    _log: any;
+    _log: Record<string, boolean>;
 
-    constructor(obj) {
+    constructor(obj: object) {
         this._events = new Events();
-        this._log = [];
+        this._log = {};
         this.clear();
         this.makeReactiveObject(obj, undefined, obj);
     }
 
-    get events() {
+    get events(): Events {
         return this._events;
     }
 
-    getLog() {
+    getLog(): string[] {
         return Object.keys(this._log);
     }
 
@@ -44,8 +49,9 @@ class Reactor {
     /**
      * add a hierarchic key to the mutation log
      * @param path {string} hierarchic key
+     * @param oRoot {object} root object
      */
-    notify(path, oRoot) {
+    notify(path: string, oRoot: object): void {
         path = path.substr(1);
         this._log[path] = true;
         const value = Extender.objectGet(oRoot, path);
@@ -59,12 +65,12 @@ class Reactor {
      * @param path {string}
      * @param oRoot {object} root object
      */
-    makeReactiveArrayMethod(arr, sMethod, path, oRoot) {
+    makeReactiveArrayMethod(arr: any[], sMethod: ArrayMutator, path: string, oRoot: object): void {
         const oSelf = this;
-        arr[sMethod] = (...args) => {
+        arr[sMethod] = ((...args: any[]) => {
             oSelf.notify(path, oRoot);
-            return Array.prototype[sMethod].apply(arr, args);
-        };
+            return (Array.prototype[sMethod] as Function).apply(arr, args);
+        }) as any;
     }
 
     /**
@@ -74,10 +80,10 @@ class Reactor {
      * @param path {string}
      * @param oRoot {object} root object
      */
-    makeReactiveArray(obj, key, path, oRoot) {
+    makeReactiveArray(obj: Record<string, any>, key: string, path: string, oRoot: object): void {
         const arr = obj[key];
         path += '.' + key;
-        const meth = [
+        const meth: ArrayMutator[] = [
             'push',
             'pop',
             'shift',
@@ -96,9 +102,8 @@ class Reactor {
      * @param key {string}
      * @param path {string}
      * @param oRoot {object} root object
-     * @return {*}
      */
-    makeReactiveScalar(obj, key, path, oRoot) {
+    makeReactiveScalar(obj: Record<string, any>, key: string, path: string, oRoot: object): void {
         let val = obj[key];
         path += '.' + key;
         const oSelf = this;
@@ -125,7 +130,7 @@ class Reactor {
      * @param path
      * @param oRoot {object} root object
      */
-    makeReactiveItem(obj, key, path, oRoot) {
+    makeReactiveItem(obj: Record<string, any>, key: string, path: string, oRoot: object): void {
         switch (Extender.getType(obj[key])) {
             case 'object':
                 this.makeReactiveObject(obj[key], path + '.' + key, oRoot);
@@ -141,7 +146,7 @@ class Reactor {
         }
     }
 
-    makeReactiveObject(obj, path, oRoot) {
+    makeReactiveObject(obj: Record<string, any>, path?: string, oRoot?: object): void {
         if (path === undefined) {
             path = '';
             oRoot = obj;

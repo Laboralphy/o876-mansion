@@ -94,6 +94,7 @@ class PhotoMogrify extends AbstractFilter {
             const n = value * MOGRIFY_STEPS | 0;
             const rn = aRegistry[n];
             rn.push({x, y});
+            return value;
         });
         return aRegistry;
     }

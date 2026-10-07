@@ -1,3 +1,5 @@
+import type { Array2D } from '@/libs/tools2d';
+
 class Perlin {
 
 	/**
@@ -5,7 +7,7 @@ class Perlin {
 	 * @param n {number} size (pixel}
 	 * @returns {number}
 	 */
-	static computeOptimalOctaves(n) {
+	static computeOptimalOctaves(n: number): number {
 		let i = 10;
 		while (i > 0) {
 			let i2 = 1 << i;
@@ -24,12 +26,12 @@ class Perlin {
 	 * @param mu {number} value between 0 and 1
 	 * @return {number} float, interpolation result
 	 */
-	static cosineInterpolate(x0, x1, mu) {
+	static cosineInterpolate(x0: number, x1: number, mu: number): number {
 		let mu2 = (1 - Math.cos(mu * Math.PI)) / 2;
    		return x0 * (1 - mu2) + x1 * mu2;
 	}
 
-	static generateSmoothNoise(aBaseNoise, nOctave) {
+	static generateSmoothNoise(aBaseNoise: Array2D<number>, nOctave: number): Float32Array[] {
 		let w = aBaseNoise.length;
 		let h = aBaseNoise[0].length;
 		let aSmoothNoise = new Array(h);
@@ -65,7 +67,7 @@ class Perlin {
 	 * @param nOctaveCount
 	 * @returns {[]}
 	 */
-	static generate(aBaseNoise, nOctaveCount) {
+	static generate(aBaseNoise: Array2D<number>, nOctaveCount: number): Float32Array[] {
 		let w = aBaseNoise.length;
 		let h = aBaseNoise[0].length;
 		let aSmoothNoise = new Array(nOctaveCount);
@@ -114,9 +116,9 @@ class Perlin {
 	 * @param aNoise {Array} an array produced by generate()
 	 * @param aPalette {array}
 	 */
-	static colorize(aNoise, aPalette) {
+	static colorize<T>(aNoise: Float32Array[], aPalette: T[]): T[] {
 		let pl = aPalette.length;
-		let data = [];
+		let data: T[] = [];
 		aNoise.forEach(r => r.forEach(x => {
 			let nColor = Math.min(pl - 1, x * pl | 0);
 			data.push(aPalette[nColor]);

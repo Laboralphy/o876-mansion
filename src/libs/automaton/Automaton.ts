@@ -1,12 +1,14 @@
 import Events from '@/libs/events';
-import StateContext from '@/libs/automaton/StateContext';
+import StateContext, { type StateDefinition } from '@/libs/automaton/StateContext';
+
+export type TransitionType = 'jump' | 'call' | 'back';
 
 class Automaton {
     _currentState: string;
     _events: Events;
     _initialState: string;
-    _stack: any[];
-    _states: any;
+    _stack: string[];
+    _states: Record<string, StateContext>;
 
     constructor() {
         this._states = {}
@@ -19,7 +21,7 @@ class Automaton {
      * The original validated state definitions against a JSON schema (jsonschema npm package).
      * State definitions are written by the game itself, so validation was dropped along with the dependency.
      */
-    checkInput (oDefinition) {
+    checkInput (oDefinition: unknown): boolean {
         if (typeof oDefinition !== 'object' || oDefinition === null) {
             throw new TypeError('Automaton: state definition must be an object')
         }
@@ -30,7 +32,7 @@ class Automaton {
         return this._currentState
     }
 
-    set state (value) {
+    set state (value: string) {
         this.changeState(value, 'jump')
     }
 
@@ -38,7 +40,7 @@ class Automaton {
         return this._initialState
     }
 
-    set initialState (value) {
+    set initialState (value: string) {
         this._initialState = value
     }
 
@@ -46,7 +48,7 @@ class Automaton {
         return this._events
     }
 
-    defineState (sName, oStateDef) {
+    defineState (sName: string, oStateDef: StateDefinition): StateContext {
         this.checkInput(oStateDef)
         const oState = new StateContext(oStateDef)
         this._states[sName] = oState
@@ -66,7 +68,7 @@ class Automaton {
                 test: eventObject.test,
                 parameters: eventObject.parameters,
                 data: eventObject.data,
-                pass(v = true) {
+                pass(v: unknown = true) {
                     eventObject.pass(v)
                 }
             })
@@ -81,11 +83,11 @@ class Automaton {
             eventObject.output = eventObject
                 .input
                 .split(' ')
-                .filter(s => s !== '')
+                .filter((s: string) => s !== '')
                 /**
                  * @param s {string}
                  */
-                .map(s => {
+                .map((s: string) => {
                     const f = parseFloat(s)
                     return isNaN(f) ? s : f
                 })
@@ -93,7 +95,7 @@ class Automaton {
         return oState
     }
 
-    defineStates (oStates) {
+    defineStates (oStates: Record<string, StateDefinition>): void {
         for (const [sState, oState] of Object.entries(oStates)) {
             this.defineState(sState, oState)
         }
@@ -103,7 +105,7 @@ class Automaton {
      *
      * @returns {StateContext}
      */
-    get currentStateContext () {
+    get currentStateContext (): StateContext {
         if (this._currentState === '') {
             this.enterState(this._initialState)
         }
@@ -116,7 +118,7 @@ class Automaton {
         }
     }
 
-    changeState (sState, sType = 'jump') {
+    changeState (sState: string, sType: TransitionType = 'jump'): void {
         switch (sType) {
             case 'jump': {
                 this.exitState()
@@ -136,7 +138,7 @@ class Automaton {
         }
     }
 
-    enterState (sState) {
+    enterState (sState: string): void {
         if (!(sState in this._states)) {
             throw new Error('state "' + sState + '" is undefined')
         }

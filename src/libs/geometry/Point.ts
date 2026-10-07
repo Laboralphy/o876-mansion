@@ -4,15 +4,15 @@
 import Geometry from '@/libs/geometry';
 
 class Point {
-    x: any;
-    y: any;
+    x: number;
+    y: number;
 
-	constructor(x, y) {
+	constructor(x: number | { x: number, y: number }, y?: number) {
 		if (typeof x === 'object' && ('x' in x) && ('y' in x)) {
 			this.x = x.x;
 			this.y = x.y;
 		} else {
-            this.x = x;
+            this.x = x as number;
             this.y = y;
 		}
 	}
@@ -22,7 +22,7 @@ class Point {
 	 * @param p {Point}
 	 * @return {number}
 	 */
-	distance(p) {
+	distance(p: { x: number, y: number }): number {
 		return Geometry.distance(p.x, p.y, this.x, this.y);
 	}
 }

@@ -40,14 +40,14 @@ class AbstractFilter {
      * The classe must modify the canvas
      * @param canvas {HTMLCanvasElement}
      */
-    render(canvas) {
+    render(canvas: HTMLCanvasElement): void {
     }
 
     /**
      * computes delat and elapsed times values
      * @param time {number} cuurent time internal clock value (in milliseconds)
      */
-    computeClock(time) {
+    computeClock(time: number): void {
         this._nProcessTime = time;
         if (this._nFirstProcessTime === 0) {
             this._nFirstProcessTime = time;

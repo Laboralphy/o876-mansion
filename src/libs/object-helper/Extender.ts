@@ -7,7 +7,7 @@
 
 class Extender {
 
-    static getType(x) {
+    static getType(x: unknown): string {
         let sType = typeof x;
         if (sType === 'object') {
             if (x === null) {
@@ -21,8 +21,8 @@ class Extender {
     }
 
 
-    static objectKeyMap(oObj, path = '') {
-        let a = [];
+    static objectKeyMap(oObj: Record<string, any>, path: string = ''): string[] {
+        let a: string[] = [];
         for (let key in oObj) {
             if (oObj.hasOwnProperty(key)) {
                 let newPath = path + '.' + key;
@@ -42,7 +42,7 @@ class Extender {
      * @param a2 {*}
      * @return {{common: *[], missing: *[]}}
      */
-    static objectDiffKeys(a1, a2) {
+    static objectDiffKeys(a1: object, a2: object): { common: string[], missing: string[] } {
         const m1 = Extender.objectKeyMap(a1);
         const m2 = Extender.objectKeyMap(a2);
         const common = m2.filter(l => m1.includes(l));
@@ -57,10 +57,10 @@ class Extender {
      * @param sBranch {string}
      * @returns {{node: *, key: string}}
      */
-    static objectReachBranch(oObj, sBranch) {
+    static objectReachBranch(oObj: object, sBranch: string): { node: any, key: string } {
         const aBranches = sBranch.split('.');
         const key = aBranches.pop();
-        const node = aBranches.reduce((prev, next) => {
+        const node = aBranches.reduce<any>((prev, next) => {
             if (next in prev) {
                 return prev[next];
             } else {
@@ -70,10 +70,10 @@ class Extender {
         return {node, key};
     }
 
-    static objectMkBranch(oObj, sBranch) {
+    static objectMkBranch(oObj: object, sBranch: string): void {
         const aBranches = sBranch.split('.');
         aBranches.pop();
-        aBranches.reduce((prev, next) => {
+        aBranches.reduce<any>((prev, next) => {
             if (!(next in prev) || prev[next] === null || typeof prev[next] !== 'object') {
                 prev[next] = {};
             }
@@ -87,7 +87,7 @@ class Extender {
      * @param sBranch {string}
      * @param newValue {*}
      */
-    static objectSet(oObj, sBranch, newValue) {
+    static objectSet(oObj: object, sBranch: string, newValue: unknown): void {
         const {node, key} = Extender.objectReachBranch(oObj, sBranch);
         if (Object.isSealed(node) && !(key in node)) {
             throw new Error('cannot set ' + key + ' property : object is sealed');
@@ -101,7 +101,7 @@ class Extender {
      * @param sBranch {string}
      * @return {*}
      */
-    static objectGet(oObj, sBranch) {
+    static objectGet(oObj: object, sBranch: string): any {
         if (oObj === undefined) {
             throw new Error('objectGet : undefined object')
         }
@@ -115,7 +115,7 @@ class Extender {
      * @param oSource
      * @param bExtends {boolean} if true, then the target will inherit all aditional branches present in oSource
      */
-    static objectExtends(oTarget, oSource, bExtends = false) {
+    static objectExtends<T extends object>(oTarget: T, oSource: object, bExtends: boolean = false): T {
         const {common, missing} = Extender.objectDiffKeys(oTarget, oSource);
         common.forEach(path => {
             Extender.objectSet(oTarget, path, Extender.objectGet(oSource, path));

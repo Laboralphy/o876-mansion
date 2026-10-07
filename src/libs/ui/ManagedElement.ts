@@ -1,20 +1,20 @@
-class ManagedElement {
-    _element: any;
-    _height: any;
-    _width: any;
-    _x: any;
-    _y: any;
+class ManagedElement<E extends HTMLElement = HTMLElement> {
+    _element: E;
+    _height: number;
+    _width: number;
+    _x: number;
+    _y: number;
 
-    constructor(element) {
+    constructor(element: E) {
         this.element = element;
     }
 
 
-    get element() {
+    get element(): E {
         return this._element;
     }
 
-    set element(value) {
+    set element(value: E) {
         this._element = value;
         const r = value.getBoundingClientRect();
         this._width = r.width;
@@ -23,49 +23,49 @@ class ManagedElement {
         this._y = r.y;
     }
 
-    aspect() {
+    aspect(): number {
         return this._width / this._height;
     }
 
-    set width(value) {
+    set width(value: number) {
         this._width = value;
         this._element.style.width = (value | 0).toString() + 'px';
     }
 
-    set height(value) {
+    set height(value: number) {
         this._height = value;
         this._element.style.height = (value | 0).toString() + 'px';
     }
 
-    set x(value) {
+    set x(value: number) {
         this._x = value;
         this._element.style.position = 'absolute';
         this._element.style.left = (value | 0).toString() + 'px';
     }
 
-    set y(value) {
+    set y(value: number) {
         this._y = value;
         this._element.style.position = 'absolute';
         this._element.style.top = (value | 0).toString() + 'px';
     }
 
-    get width() {
+    get width(): number {
         return this._width;
     }
 
-    get height() {
+    get height(): number {
         return this._height;
     }
 
-    get x() {
+    get x(): number {
         return this._x;
     }
 
-    get y() {
+    get y(): number {
         return this._y;
     }
 
-    autoStretch() {
+    autoStretch(): void {
         const PADDING = 0;
         let h = innerHeight;
         let w = innerWidth;

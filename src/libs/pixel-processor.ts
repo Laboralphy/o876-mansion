@@ -1,13 +1,24 @@
+export type RGBA = { r: number, g: number, b: number, a: number };
+
+export type PixelContext = {
+    pixel: (x: number, y: number) => RGBA,
+    width: number,
+    height: number,
+    x: number,
+    y: number,
+    color: RGBA
+};
+
 class PixelProcessor {
 
-    static process(oCanvas, cb) {
+    static process(oCanvas: HTMLCanvasElement, cb: (oPixelCtx: PixelContext) => void): void {
         let ctx = oCanvas.getContext('2d');
         let oImageData = ctx.createImageData(oCanvas.width, oCanvas.height);
         let pixels = new Uint32Array(oImageData.data.buffer);
         let h = oCanvas.height;
         let w = oCanvas.width;
-        let oPixelCtx = {
-            pixel: (x, y) => {
+        let oPixelCtx: PixelContext = {
+            pixel: (x: number, y: number): RGBA => {
                 let nOffset = y * w + x;
                 let p = pixels[nOffset];
                 return {
@@ -28,7 +39,7 @@ class PixelProcessor {
                 a: 255
             }
         };
-        let aColors = [];
+        let aColors: RGBA[] = [];
         for (let y = 0; y < h; ++y) {
             for (let x = 0; x < w; ++x) {
                 let nOffset = y * w + x;

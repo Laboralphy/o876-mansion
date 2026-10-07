@@ -1,6 +1,16 @@
 // import * as crypto from 'crypto';
+import type { RGBA } from '@/libs/pixel-processor';
 
 let bDefaultImageSmoothing = true;
+
+/**
+ * Text styles for CanvasHelper.text() : either a fill style, or an object with several properties
+ */
+export type TextStyles = string | CanvasGradient | {
+	fill?: false | string | CanvasGradient,
+	stroke?: boolean | string,
+	font?: string
+};
 
 class CanvasHelper {
 	/**
@@ -9,7 +19,7 @@ class CanvasHelper {
 	 * @param height {number}
 	 * @return {HTMLCanvasElement}
 	 */
-	static createCanvas(width, height) {
+	static createCanvas(width: number, height: number): HTMLCanvasElement {
 		let c = document.createElement('canvas');
 		c.width = width;
 		c.height = height;
@@ -18,15 +28,15 @@ class CanvasHelper {
 		return c;
 	}
 
-	static setDefaultImageSmoothing(b) {
+	static setDefaultImageSmoothing(b: boolean): void {
         bDefaultImageSmoothing = b;
 	}
 
-	static getDefaultImageSmoothing() {
+	static getDefaultImageSmoothing(): boolean {
 		return bDefaultImageSmoothing;
 	}
 
-	static getData(oCanvas, sType = 'image/png') {
+	static getData(oCanvas: HTMLCanvasElement, sType: string = 'image/png'): string {
 		return oCanvas.toDataURL(sType);
 	}
 
@@ -45,7 +55,7 @@ class CanvasHelper {
 	 * @param oCanvas {HTMLCanvasElement}
 	 * @param b {boolean} true = smoothing on // false = smoothing off
 	 */
-	static setImageSmoothing(oCanvas, b) {
+	static setImageSmoothing(oCanvas: HTMLCanvasElement, b: boolean): void {
 		let oContext = oCanvas.getContext('2d');
 		oContext.imageSmoothingEnabled = b;
 	}
@@ -55,7 +65,7 @@ class CanvasHelper {
      * @param oCanvas {HTMLCanvasElement}
 	 * @return {boolean} true = smoothing on // false = smoothing off
 	 */
-	static getImageSmoothing(oCanvas) {
+	static getImageSmoothing(oCanvas: HTMLCanvasElement): boolean {
 		let oContext = oCanvas.getContext('2d');
 		return !!oContext.imageSmoothingEnabled;
 	}
@@ -65,7 +75,7 @@ class CanvasHelper {
      * @param c {*}
 	 * @return {boolean}
 	 */
-	static isCanvas(c) {
+	static isCanvas(c: unknown): c is HTMLCanvasElement {
 		return c instanceof HTMLCanvasElement;
 	}
 
@@ -74,7 +84,7 @@ class CanvasHelper {
      * @param c {*}
 	 * @return {boolean}
 	 */
-	static isImage(c) {
+	static isImage(c: unknown): c is HTMLImageElement {
 		return c instanceof Image;
 	}
 
@@ -83,7 +93,7 @@ class CanvasHelper {
 	 * @param oCanvas {HTMLCanvasElement|Image} to be cloned
 	 * @return  HTMLCanvasElement
 	 */
-	static cloneCanvas(oCanvas) {
+	static cloneCanvas(oCanvas: HTMLCanvasElement | HTMLImageElement): HTMLCanvasElement {
 		let w, h, b;
 		if (CanvasHelper.isImage(oCanvas)) {
 			let oImage = oCanvas;
@@ -108,7 +118,7 @@ class CanvasHelper {
 	 * @param f {function} f(x, y, {r, g, b, a}} 
 	 *
 	 */
-	static applyFilter(oCanvas, f) {
+	static applyFilter(oCanvas: HTMLCanvasElement, f: (x: number, y: number, color: RGBA) => void): void {
 		const oCtx = oCanvas.getContext('2d');
 		const W = oCanvas.width;
 		const H = oCanvas.height;
@@ -139,7 +149,7 @@ class CanvasHelper {
 	 * Loads a bunch of canvases
 	 * @param aUrls {string[]}
 	 */
-	static loadCanvases (aUrls) {
+	static loadCanvases (aUrls: string[]): Promise<HTMLCanvasElement[]> {
 		const aProms = aUrls.map(s => CanvasHelper.loadCanvas(s))
 		return Promise.all(aProms)
 	}
@@ -149,8 +159,8 @@ class CanvasHelper {
 	 * @param sUrl {string} image url
 	 * @return {Promise<HTMLCanvasElement>}
 	 */
-	static loadCanvas(sUrl) {
-		return new Promise((resolve, reject) => {
+	static loadCanvas(sUrl: string): Promise<HTMLCanvasElement> {
+		return new Promise<HTMLCanvasElement>((resolve, reject) => {
 			const image = new Image();
 			image.addEventListener('load', () => {
 				resolve(CanvasHelper.cloneCanvas(image));
@@ -170,7 +180,7 @@ class CanvasHelper {
 	 * @param height
 	 * @return {HTMLCanvasElement}
 	 */
-	static resize(oCanvas, width, height) {
+	static resize(oCanvas: HTMLCanvasElement, width: number, height: number): HTMLCanvasElement {
 		const oNewCanvas = this.createCanvas(width, height);
 		CanvasHelper.setImageSmoothing(oNewCanvas, CanvasHelper.getImageSmoothing(oCanvas));
 		const ctx = oNewCanvas.getContext('2d');
@@ -195,7 +205,7 @@ class CanvasHelper {
 	 * @param wMax
 	 * @param h
 	 */
-	static text(oCanvas, sText, x, y, oStyles, wMax, h) {
+	static text(oCanvas: HTMLCanvasElement, sText: string, x: number, y: number, oStyles: TextStyles, wMax: number, h: number): void {
 		// white space as a cesure
 		const CESURE = ' ';
 		// specified gradient or plain string in styles ?
@@ -223,9 +233,9 @@ class CanvasHelper {
 			if (oStyles.stroke === true) {
 				// if oStyle.stroke is true, we cancel default value : text will be stroke
 				bStroke = true;
-			} else {
+			} else if (oStyles.stroke !== false) {
 				bStroke = true;
-				oContext.fillStyle = oStyles.stroke;
+				oContext.strokeStyle = oStyles.stroke;
 			}
 			// if oStyle.stroke is false, we keep default false value : text will not be stroke
 		}
@@ -238,7 +248,7 @@ class CanvasHelper {
 			.split(CESURE)
 			.filter(s => s.length > 0);
 		let xCurs = 0, yCurs = 0;
-		let aLine = [];
+		let aLine: string[] = [];
 
 		const commitText = () => {
 			const sLine = aLine.join('');

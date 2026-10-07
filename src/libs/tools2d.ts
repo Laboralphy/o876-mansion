@@ -1,4 +1,10 @@
 /**
+ * A 2D array : an array of rows, each row being an Array or a typed array (Uint8Array, Float32Array...)
+ */
+export type Row<T> = { length: number, [x: number]: T };
+export type Array2D<T> = Row<T>[];
+
+/**
  * création rapide d'une matrice 2D
  * @param w {number}
  * @param h {number}
@@ -7,14 +13,14 @@
  * @returns {[]}
  * @private
  */
-function createArray2D (w, h, feed, pType: any = Array) {
-    const a = [];
+function createArray2D<T>(w: number, h: number, feed: T | ((x: number, y: number) => T), pType: any = Array): Array2D<T> {
+    const a: Array2D<T> = [];
     for (let y = 0; y < h; ++y) {
         const r = new pType(w);
         for (let x = 0; x < w; ++x) {
             r[x] = feed instanceof Function
-                ? feed(x, y)
-                : feed;
+                ? (feed as (x: number, y: number) => T)(x, y)
+                : feed as T;
         }
         a[y] = r;
     }
@@ -22,7 +28,7 @@ function createArray2D (w, h, feed, pType: any = Array) {
 }
 
 
-function _createRow(aRow, pType = Array) {
+function _createRow<T>(aRow: T[], pType: any = Array): Row<T> {
     switch (pType) {
         case Array:
             return aRow;
@@ -37,7 +43,7 @@ function _createRow(aRow, pType = Array) {
  * @param aArray2D {array}
  * @param cb {function}
  */
-function walk2D(aArray2D, cb) {
+function walk2D<T>(aArray2D: Array2D<T>, cb: (x: number, y: number, value: T) => T): void {
     for (let y = 0, h = aArray2D.length; y < h; ++y) {
         const row = aArray2D[y];
         for (let x = 0, w = row.length; x < w; ++x) {
@@ -52,11 +58,11 @@ function walk2D(aArray2D, cb) {
  * @param pType {ArrayConstructor} row type (default : Array, can be Uint8Array, Float32Array ...)
  * @param cb
  */
-function map2D(aArray2D, cb, pType = Array) {
+function map2D<T, U>(aArray2D: T[][], cb: (x: number, y: number, value: T) => U, pType: any = Array): Row<U>[] {
     return aArray2D.map((row, y) => _createRow(row.map((cell, x) => cb(x, y, cell))), pType);
 }
 
-function rotate(aArray, bDirect: any = false) {
+function rotate<T>(aArray: Array2D<T>, bDirect: boolean = false): Array2D<T> {
     const n = aArray.length;
     if (n === 0) {
         return [];
@@ -67,9 +73,8 @@ function rotate(aArray, bDirect: any = false) {
     );
 }
 
-function rotateTwice(aArray) {
-    const a = rotate(aArray);
-    return rotate(aArray, a);
+function rotateTwice<T>(aArray: Array2D<T>): Array2D<T> {
+    return rotate(rotate(aArray));
 }
 
 export default {

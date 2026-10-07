@@ -1,4 +1,4 @@
-export function approachValue(fGoal, fCurrent, fStep) {
+export function approachValue(fGoal: number, fCurrent: number, fStep: number): number {
     if (fGoal === fCurrent) {
         return fGoal;
     }

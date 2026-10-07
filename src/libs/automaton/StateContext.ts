@@ -1,15 +1,39 @@
 import Events from '@/libs/events';
-class StateContext {
-    _back: any;
-    _call: any;
-    _data: any;
-    _done: any;
-    _events: Events;
-    _init: any;
-    _jump: any;
-    _loop: any;
 
-    constructor(oDefinition: any = {}) {
+/**
+ * A transition toward another state, taken when "test" passes (or unconditionally if there is no test)
+ */
+export type Transition = {
+    test?: string,
+    state?: string,
+    actions?: string[]
+};
+
+/**
+ * State definition, as given to Automaton.defineState().
+ * Actions and tests are script strings : "opcode param1 param2..."
+ */
+export type StateDefinition = {
+    data?: object | ((sc: StateContext) => object),
+    init?: string | string[],
+    loop?: string | string[],
+    done?: string | string[],
+    call?: Transition | Transition[],
+    back?: Transition | Transition[],
+    jump?: Transition | Transition[]
+};
+
+class StateContext {
+    _back: Transition[];
+    _call: Transition[];
+    _data: any;
+    _done: string[];
+    _events: Events;
+    _init: string[];
+    _jump: Transition[];
+    _loop: string[];
+
+    constructor(oDefinition: StateDefinition = {}) {
         const { back = [], call = [], data = {}, init = [], loop = [], done = [], jump = [] } = oDefinition
         this._data = typeof data === 'function' ? data(this) : { ...data }
         this._init = Array.isArray(init) ? init : [init] // liste des actions effectuées au début de l'état
@@ -29,14 +53,14 @@ class StateContext {
         return this._events
     }
 
-    runActions (a) {
+    runActions (a: string[]): void {
         a.forEach(s => {
             this.invokeAction(s)
         })
     }
 
-    runSmth (s) {
-        this.runActions(this['_' + s])
+    runSmth (s: 'init' | 'loop' | 'done'): void {
+        this.runActions({ init: this._init, loop: this._loop, done: this._done }[s])
     }
 
     runInit () {
@@ -79,10 +103,10 @@ class StateContext {
         }
     }
 
-    parseScriptArguments (sInput) {
+    parseScriptArguments (sInput: string): { opcode: string, parameters: any } {
         const r = sInput.match(/^\s*(\S+)\s*(.*)$/)
         if (r) {
-            const eventObject = {
+            const eventObject: { opcode: string, input: string, output: any } = {
                 opcode: r[1],
                 input: r[2],
                 output: r[2]
@@ -97,7 +121,7 @@ class StateContext {
         }
     }
 
-    invokeAction (action) {
+    invokeAction (action: string): void {
         const { opcode, parameters } = this.parseScriptArguments(action)
         this._events.emit('action', {
             action: opcode,
@@ -106,14 +130,14 @@ class StateContext {
         })
     }
 
-    invokeTest (test) {
+    invokeTest (test: string): boolean {
         const { opcode, parameters } = this.parseScriptArguments(test)
         const eventObject = {
             test: opcode,
             parameters,
             data: this._data,
             _result: false,
-            pass(v = true) {
+            pass(v: unknown = true) {
                 this._result = Boolean(v)
             }
         }

@@ -2,7 +2,7 @@ import AbstractFilter from "@/libs/filters/AbstractFilter";
 
 class FilterManager {
     _enabled: boolean;
-    _filters: any[];
+    _filters: AbstractFilter[];
 
 
     constructor() {
@@ -10,15 +10,15 @@ class FilterManager {
         this._filters = [];
     }
 
-    get filters() {
+    get filters(): AbstractFilter[] {
         return this._filters;
     }
 
-    get enabled() {
+    get enabled(): boolean {
         return this._enabled;
     }
 
-    set enabled(value) {
+    set enabled(value: boolean) {
         this._enabled = value;
     }
 
@@ -26,7 +26,7 @@ class FilterManager {
      * Adds a new filter to the list
      * @param oFilter {AbstractFilter} the new filter
      */
-    link(oFilter) {
+    link(oFilter: AbstractFilter): void {
         if (oFilter instanceof AbstractFilter) {
             if (this._enabled) {
                 this._filters.push(oFilter);
@@ -56,7 +56,7 @@ class FilterManager {
      * removes dead filters
      * @param time {number} advancement time
      */
-    process(time) {
+    process(time: number): void {
         this.removeTerminatedFilters()
         this
             ._filters
@@ -71,7 +71,7 @@ class FilterManager {
      * updates the specified canvas
      * @param canvas {HTMLCanvasElement}
      */
-    render(canvas) {
+    render(canvas: HTMLCanvasElement): void {
         if (this._enabled) {
             this._filters.forEach(f => f.render(canvas));
         }

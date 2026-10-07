@@ -15,13 +15,13 @@ class Geometry {
      * @param y2 {Number}
      * @return {number} distance
      */
-    static distance(x1, y1, x2, y2) {
+    static distance(x1: number, y1: number, x2: number, y2: number): number {
         let dx = x1 - x2;
         let dy = y1 - y2;
         return Math.sqrt(dx * dx + dy * dy);
     }
 
-    static squareDistance(x1, y1, x2, y2) {
+    static squareDistance(x1: number, y1: number, x2: number, y2: number): number {
         let dx = x1 - x2;
         let dy = y1 - y2;
         return dx * dx + dy * dy;
@@ -33,7 +33,7 @@ class Geometry {
      * @param value {number}
      * @return {number}
      */
-    static normalizeAngle(value) {
+    static normalizeAngle(value: number): number {
         while (value > PI) {
             value -= PI2;
         }
@@ -53,11 +53,11 @@ class Geometry {
      * @param hr {number} hauteur du rect
      * @return {boolean}
      */
-    static pointInRect(x, y, xr, yr, wr, hr) {
+    static pointInRect(x: number, y: number, xr: number, yr: number, wr: number, hr: number): boolean {
         return x >= xr && y >= yr && x < xr + wr && y < yr + hr;
     }
 
-    static rectInRect(ax, ay, aw, ah, bx, by, bw, bh) {
+    static rectInRect(ax: number, ay: number, aw: number, ah: number, bx: number, by: number, bw: number, bh: number): boolean {
         let ax2 = ax + aw - 1;
         let ay2 = ay + ah - 1;
         let bx2 = bx + bw - 1;
@@ -66,11 +66,11 @@ class Geometry {
             ay > by2 && ay2 < by;
     }
 
-    static pointInCircle(x, y, xc, yc, r) {
+    static pointInCircle(x: number, y: number, xc: number, yc: number, r: number): boolean {
         return Geometry.squareDistance(x, y, xc, yc) <= (r * r);
     }
 
-    static circleInRect(xc, yc, r, xr, yr, wr, hr) {
+    static circleInRect(xc: number, yc: number, r: number, xr: number, yr: number, wr: number, hr: number): boolean {
         const xNearest = Math.max(xr, Math.min(xc, xr + wr));
         const yNearest = Math.max(yr, Math.min(yc, yr + hr));
         const xDelta = xc - xNearest;
@@ -87,11 +87,13 @@ class Geometry {
      * @param [y2] {number}
      * @return {number}
      */
-    static angle(x1, y1, x2, y2) {
+    static angle(v1: Vector, v2: Vector): number;
+    static angle(x1: number, y1: number, x2: number, y2: number): number;
+    static angle(x1: number | Vector, y1: number | Vector, x2?: number, y2?: number): number {
         if ((x1 instanceof Vector) && (y1 instanceof Vector)) {
             return Geometry.angle(x1.x, x1.y, y1.x, y1.y)
         } else {
-            return Math.atan2(y2 - y1, x2 - x1);
+            return Math.atan2(y2 - (y1 as number), x2 - (x1 as number));
         }
     }
 
@@ -100,7 +102,7 @@ class Geometry {
      * @param angle
      * @param norm
      */
-    static polar2rect(angle, norm) {
+    static polar2rect(angle: number, norm: number): { dx: number, dy: number } {
         return {dx: norm * Math.cos(angle), dy: norm * Math.sin(angle)};
     }
 }

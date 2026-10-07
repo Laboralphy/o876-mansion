@@ -9,8 +9,8 @@
 import Geometry from '@/libs/geometry';
 
 class Vector {
-    x: any;
-    y: any;
+    x: number;
+    y: number;
 
 	/**
 	 * The constructor accepts one two parameters
@@ -22,7 +22,7 @@ class Vector {
 	 * @param (x) {Vector|number}
 	 * @param (y) {number}
 	 */
-	constructor(x?: any, y?: any) {
+	constructor(x?: Vector | number, y?: number) {
 		if (x instanceof Vector) {
 			this.x = x.x;
 			this.y = x.y;
@@ -38,7 +38,7 @@ class Vector {
      * @param x {number|Vector}
      * @param [y] {number}
      */
-	set(x, y = 0) {
+	set(x: Vector | number, y: number = 0): Vector {
 		if (x instanceof Vector) {
 			return this.set(x.x, x.y);
 		}
@@ -53,7 +53,7 @@ class Vector {
 	 * @param v {Vector}
 	 * @returns {Vector}
 	 */
-	add(v) {
+	add(v: Vector): Vector {
 		return new Vector(v.x + this.x, v.y + this.y);
 	}
 
@@ -62,11 +62,11 @@ class Vector {
 	 * returns a new Vector which is the diffrence of this instance and the given argument
 	 * @param v
 	 */
-	sub(v) {
+	sub(v: Vector): Vector {
 		return new Vector(this.x - v.x, this.y - v.y);
 	}
 
-	neg() {
+	neg(): Vector {
 		return new Vector(-this.x, -this.y);
 	}
 
@@ -77,7 +77,9 @@ class Vector {
 	 * @param f {Vector|number}
 	 * @returns {Vector|number}
 	 */
-	mul(f) {
+	mul(f: Vector): number;
+	mul(f: number): Vector;
+	mul(f: Vector | number): Vector | number {
 		if (f instanceof Vector) {
 			return this.x * f.x + this.y * f.y;
 		} else if (typeof f === 'number') {
@@ -91,7 +93,7 @@ class Vector {
 	 * return the vector length
 	 * @return {number}
 	 */
-	length() {
+	length(): number {
 		return Geometry.distance(0, 0, this.x, this.y);
 	}
 
@@ -99,7 +101,7 @@ class Vector {
 	 * returns a normalized version of this vector
 	 * @return {Vector}
 	 */
-	normalize() {
+	normalize(): Vector {
 		return this.mul(1 / this.length());
 	}
 
@@ -107,7 +109,7 @@ class Vector {
 	 * returns a zero vector
 	 * @returns {Vector}
 	 */
-	static zero() {
+	static zero(): Vector {
 		return new Vector(0, 0);
 	}
 
@@ -116,7 +118,7 @@ class Vector {
 	 * Addition mutable des composante du vecteur
      * @param v {Vector}
      */
-	translate(v) {
+	translate(v: Vector): Vector {
 		this.x += v.x;
 		this.y += v.y;
 		return this;
@@ -127,7 +129,7 @@ class Vector {
      * Multiplication mutable des composante du vecteur
      * @param f {number}
      */
-	scale(f) {
+	scale(f: number): Vector {
 		this.x *= f;
 		this.y *= f;
 		return this;
@@ -137,15 +139,15 @@ class Vector {
 	 * Renvoie l'angle entre le vecteur et l'axe X
 	 * si le vecteur est dans la direction x+ alors l'angle = 0
      */
-	angle() {
+	angle(): number {
 		return Geometry.angle(0, 0, this.x, this.y);
 	}
 
-	toString() {
+	toString(): string {
 		return [this.x, this.y].map(n => n.toString()).join(':');
 	}
 
-	fromPolar(a, s) {
+	fromPolar(a: number, s: number): Vector {
 		let v = Geometry.polar2rect(a, s);
 		this.set(v.dx, v.dy);
 		return this;
