@@ -63,6 +63,41 @@ Shared types available for the next steps :
 - `GameOptions` (`engine/GameAbstract.ts`), `PulseOptions`, `FillStyle`, `TilesetAnimation`
 - `Game.playerThinker` : the camera thinker, typed as `PlayerThinker`
 
+## Where we stopped (2026-10-07)
+
+Steps 1 and 2 are done and committed (`8535bbc` Typing function I, `aadb5c9` Typing function II).
+`vue-tsc --noEmit` and `npm run build` are clean. Counts : **532** untyped parameters, **88** explicit `any`.
+
+Goal : not only reach 0 untyped parameters, but eradicate as many explicit `any` as possible along the way
+(replace each `any` field of a touched class by its real type).
+
+### Next : step 3 — stores (56 parameters)
+
+`src/stores/ui`, `album`, `logic`, `visor`, `src/mixins/ui.ts`. Then step 4 (`Game.ts` has 83 parameters).
+
+### Pending decision : `LinearBoltThinker.fire()` (step 6)
+
+`LinearBoltThinker.fire(owner, missileData)` overrides the engine's `MissileThinker.fire(owner, speed: number)`
+with an incompatible second parameter : TypeScript will reject it once thinker parameters are typed.
+
+Proposal (not applied yet, waiting for approval) :
+- rename the game method to `launch(owner: Entity, missileData: MissileData)` : it configures the bolt
+  (data, `fly` animation) then calls the engine's `this.fire(owner, speed)`, which is no longer overridden ;
+- declare `MissileData { resref: string, speed?, effect?: 'damage' | 'blindness' | 'confusion', duration?, damage? }`
+  (shape of the `"missile"` entries of `data/ghosts.json` : `null`, one object, or an array) ;
+- callers : `ShooterWalkerThinker.$shoot` and `VengefulThinker.$shoot` (`.fire(` → `.launch(`) ;
+- remove the `_owner: any` redeclarations in `LinearBoltThinker` / `HomingBoltThinker` (they hide `Entity`) ;
+- `HomingBoltThinker.vectorToTarget()` : `(oOwner.thinker as GhostThinker).target`.
+
+Rejected alternatives : an options object in the engine `fire()` (only typechecks through method parameter
+bivariance, and leaks game data into the engine) ; setting `_missileData` before `fire()` (order-dependent).
+
+### To test in game (behavior changed in step 2)
+
+- Intro : `IntroThinker` now really disables pointer lock during the intro (`screen.disablePointerLock()`),
+  the former code wrote a misspelled property (`_enablePointerlock`) and had no effect.
+  If the pointer is locked when the intro starts, it is now released.
+
 ## Step 1 — leaf libraries
 
 No dependency on the game : types written here are reused by everything else.
