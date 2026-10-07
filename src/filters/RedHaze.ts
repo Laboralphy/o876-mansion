@@ -1,15 +1,28 @@
 import Halo from "@/engine/filters/Halo";
-import Rainbow from "@/libs/rainbow";
+import { Rainbow } from '@laboralphy/rainbow';
 
 class RedHaze extends Halo {
-    _color: any;
+    _color: string;
 
     constructor() {
         super('#A00');
     }
 
-    _buildColor(r, g, b, a) {
-        this._color = Rainbow.rgba({r, g, b, a});
+    /**
+     * Builds the halo css color
+     * @param r red, 0..255
+     * @param g green, 0..255
+     * @param b blue, 0..255
+     * @param a alpha, 0..255
+     */
+    _buildColor(r: number, g: number, b: number, a: number) {
+        // Rainbow channels are expressed in [0, 1]
+        this._color = Rainbow.renderRGBA(Rainbow.fromRGBA({
+            r: r / 255,
+            g: g / 255,
+            b: b / 255,
+            a: a / 255
+        }));
     }
 
     buildGradient(canvas, color) {

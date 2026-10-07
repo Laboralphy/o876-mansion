@@ -1,6 +1,6 @@
 <template>
   <div class="ui-panel-window ui-size-60-90">
-    <TitleAndCo :title="STRINGS.MAIN_TAB_INV">
+    <TitleAndCo :title="$t('MAIN_TAB_INV')">
       <ItemTypes></ItemTypes>
     </TitleAndCo>
     <div class="inv-container" v-if="getInventoryContent.length > 0">
@@ -14,14 +14,13 @@
           @click="({id}) => inventoryItemClicked(id)"></Item>
     </div>
     <div v-else class="no-item-here typewriter">
-      <span>{{ STRINGS.INVENTORY_TAB_EMPTY }}</span>
+      <span>{{ $t('INVENTORY_TAB_EMPTY') }}</span>
     </div>
   </div>
 </template>
 
 <script lang="ts">
 import { defineComponent } from 'vue';
-import strings from "@/mixins/strings";
 import TitleAndCo from "@/components/TitleAndCo.vue";
 import Item from "@/components/Item.vue";
 import ItemTypes from "@/components/ItemTypes.vue";
@@ -31,7 +30,7 @@ import logic from "@/mixins/logic";
 export default defineComponent({
   name: "Inventory",
   components: {ItemTypes, Item, TitleAndCo},
-  mixins: [strings, ui, logic],
+  mixins: [ui, logic],
 
   computed: {
     getInventoryContent: function() {
@@ -45,7 +44,7 @@ export default defineComponent({
 
   methods: {
     getItemDataById: function(id) {
-      const oItemStrData = this.STRINGS.ITEMS[id];
+      const oItemStrData = this.$t('items:' + id, { returnObjects: true });
       const oItemData = this.getItemData.find(item => item.id === id);
       const name = oItemStrData.name;
       const icon = oItemData.icon;

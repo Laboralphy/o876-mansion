@@ -1,22 +1,21 @@
 <template>
     <div class="sidebar typewriter">
         <ul>
-            <li><span @click="select('inv')">{{ STRINGS.MAIN_TAB_INV }}</span></li>
-            <li><span @click="select('album')">{{ STRINGS.MAIN_TAB_ALBUM }}</span></li>
-            <li><span @click="select('notes')">{{ STRINGS.MAIN_TAB_NOTES }}</span></li>
-            <li><span @click="select('settings')">{{ STRINGS.MAIN_TAB_SETTINGS }}</span></li>
+            <li><span @click="select('inv')">{{ $t('MAIN_TAB_INV') }}</span></li>
+            <li><span @click="select('album')">{{ $t('MAIN_TAB_ALBUM') }}</span></li>
+            <li><span @click="select('notes')">{{ $t('MAIN_TAB_NOTES') }}</span></li>
+            <li><span @click="select('settings')">{{ $t('MAIN_TAB_SETTINGS') }}</span></li>
         </ul>
     </div>
 </template>
 
 <script lang="ts">
     import { defineComponent } from 'vue';
-    import STRINGS from '@/mixins/strings';
     import ui from "@/mixins/ui";
 
     export default defineComponent({
         name: "Sidebar",
-        mixins: [STRINGS, ui],
+        mixins: [ui],
         methods: {
             select: function(tab) {
                 this.setActiveTab({value: tab});

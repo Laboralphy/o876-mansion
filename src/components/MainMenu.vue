@@ -9,7 +9,6 @@
 <script lang="ts">
 import { defineComponent } from 'vue';
 import UIMixin from '@/mixins/ui';
-import STRINGS from '@/mixins/strings';
 import TitleStory from "@/components/intro/TitleStory.vue";
 import HowTo from "@/components/HowTo.vue";
 import GenericBox from "@/components/GenericBox.vue";
@@ -21,7 +20,7 @@ import EndOfGame from '@/components/EndOfGame.vue';
 export default defineComponent({
   name: "MainMenu",
   components: {TitleLoading, TitleControls, TitleMain, HowTo, TitleStory, GenericBox, EndOfGame},
-  mixins: [STRINGS, UIMixin]
+  mixins: [UIMixin]
 });
 
 </script>

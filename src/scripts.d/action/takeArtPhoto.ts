@@ -7,7 +7,7 @@ export function main(game, ref, score = 0) {
         ref,                    // information supplémentaire (titre, description)
     );
     game.engine.delayCommand(
-        () => game.ui.popup('EVENT_PHOTO_ART_STORED', 'album-art', 'PHOTOS.' + ref + '.title'),
+        () => game.ui.popup('EVENT_PHOTO_ART_STORED', 'album-art'),
         CONSTS.DELAY_BETWEEN_PHOTO_AND_POPUP
     );
 }

@@ -3,7 +3,7 @@ import Thinker from "@/engine/thinkers/Thinker";
 import FadeOut from "@/engine/filters/FadeOut";
 import SimpleText from "@/filters/SimpleText";
 import Link from "@/engine/filters/Link";
-import STRINGS from "@/strings";
+import i18n from "@/i18n";
 import CinemaScope from "@/filters/CinemaScope";
 import Splash from "@/filters/Splash";
 import CanvasHelper from "@/libs/canvas-helper";
@@ -105,13 +105,13 @@ class IntroThinker extends Thinker {
             }
         ];
         const buildTextFilter = data => {
-            const s = STRINGS.PLOT_STRUCT[data.text];
-            if (s === undefined) {
+            const sKey = 'PLOT_STRUCT.' + data.text;
+            if (!i18n.exists(sKey)) {
                 throw new Error('this resource string does not exist : ' + data.text);
             }
             const oText = new SimpleText();
             const cvs = engine.getRenderingCanvas();
-            oText.text(s, cvs.width >> 1, cvs.height >> 1);
+            oText.text(i18n.t(sKey, { returnObjects: true }), cvs.width >> 1, cvs.height >> 1);
             return Promise.resolve(oText);
         };
         const buildSplashFilter = async ({photos, loops}: any) => {

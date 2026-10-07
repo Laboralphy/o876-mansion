@@ -16,8 +16,11 @@
     "typecheck": "vue-tsc --noEmit"
   },
   "dependencies": {
+    "@laboralphy/rainbow": "^3.0.0",
     "@laboralphy/raycaster386": "^1.0.0",
     "howler": "^2.2.4",
+    "i18next": "^26.4.2",
+    "i18next-vue": "^5.4.0",
     "pinia": "^4.0.3",
     "vue": "^3.5.43"
   },

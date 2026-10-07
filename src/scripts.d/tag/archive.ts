@@ -9,11 +9,12 @@
  * @param y {number} coordonnée y de la cellule ou se trouve le tag
  * @param ref {string} référence de la photo à archiver
  */
+import i18n from '@/i18n';
 export function push(game, remove, x, y, ref) {
     if (!game.engine.isDoorLocked(x, y)) {
         if (game.album.hasTakenPhoto(ref)) {
             console.info('archiving', ref)
-            game.ui.popup('EVENT_PHOTO_ARCHIVED', 'album', 'PHOTOS.' + ref + '.title');
+            game.ui.popup('EVENT_PHOTO_ARCHIVED', 'album', { title: i18n.t('photos:' + ref + '.title') });
             game.album.archivePhoto(ref);
         } else {
             console.warn('could not archive', ref, '(photo not taken)')

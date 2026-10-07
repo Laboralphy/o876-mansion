@@ -6,7 +6,7 @@
     >
       <template v-slot:header>
         <div class="container">
-          <h1>{{ STRINGS.HOWTO_TITLE }}</h1>
+          <h1>{{ $t('HOWTO_TITLE') }}</h1>
           <hr/>
         </div>
       </template>
@@ -14,7 +14,7 @@
         <table>
           <tbody>
           <HowTo
-              v-for="(s, i) in STRINGS.HOWTO_ACTIONS"
+              v-for="(s, i) in howToActions"
               :desc="s.desc"
               :note="s.note || ''"
               :image="howToImages[i]"
@@ -27,7 +27,7 @@
         <div class="container">
           <hr/>
           <div class="commands">
-            <button class="typewriter" @click="++phase">{{ STRINGS.COMMAND_CAPTION_START }}</button>
+            <button class="typewriter" @click="++phase">{{ $t('COMMAND_CAPTION_START') }}</button>
           </div>
         </div>
       </template>
@@ -37,7 +37,6 @@
 
 <script lang="ts">
 import { defineComponent } from 'vue';
-import STRINGS from '@/mixins/strings';
 import ui from '@/mixins/ui';
 import GenericBox from "@/components/GenericBox.vue";
 import HowTo from "@/components/HowTo.vue";
@@ -45,7 +44,15 @@ import HowTo from "@/components/HowTo.vue";
 export default defineComponent({
   name: "TitleControls",
   components: {HowTo, GenericBox},
-  mixins: [STRINGS, ui],
+  mixins: [ui],
+  computed: {
+    /**
+     * list of commands descriptions : [{desc, note?}, ...]
+     */
+    howToActions(): { desc: string, note?: string }[] {
+      return this.$t('HOWTO_ACTIONS', { returnObjects: true }) as { desc: string, note?: string }[];
+    }
+  },
   data: function () {
     return {
       howToImages: [

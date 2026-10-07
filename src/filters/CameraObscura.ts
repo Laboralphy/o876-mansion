@@ -5,7 +5,6 @@
 import * as CONSTS from "@/consts";
 import AbstractFilter from "@/libs/filters/AbstractFilter";
 import Easing from "@/libs/easing";
-import Rainbow from "@/libs/rainbow";
 import CanvasHelper from "@/libs/canvas-helper";
 import Reactor from "@/libs/object-helper/Reactor";
 import {approachValue} from "@/libs/approach-value";
@@ -54,7 +53,6 @@ class CameraObscura extends AbstractFilter {
     _oManagedEnergyData: Reactor;
     _oOccularCtx: any;
     _oOccularCvs: any;
-    _rainbow: Rainbow;
     _visor: any;
 
     constructor() {
@@ -63,7 +61,6 @@ class CameraObscura extends AbstractFilter {
         this._lamp = null;
         this._nState = 0; // 0 = hidden; 10; start raising; 11 = raising; 20 = raised; 30 = start falling; 31; falling
         this._easing = new Easing();
-        this._rainbow = new Rainbow();
         this._nTimeIndex = 0;
         this._oOccularCvs = CanvasHelper.createCanvas(SCREEN_W, SCREEN_H);
         this._oOccularCtx = this._oOccularCvs.getContext('2d');

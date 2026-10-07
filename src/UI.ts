@@ -1,11 +1,11 @@
 import { createApp, type App } from 'vue';
 import { createPinia } from 'pinia';
+import I18NextVue from 'i18next-vue';
+import i18n from '@/i18n';
 import * as UI_MUTATIONS from '@/stores/ui/mutation-types';
 import * as UI_ACTIONS from '@/stores/ui/action-types';
 import Application from '@/components/Application.vue';
-import STRINGS from '@/strings';
 import StoreAbstract from "@/StoreAbstract";
-import ObjectExtender from '@/libs/object-helper/Extender';
 
 class UI extends StoreAbstract {
     private readonly _app: App;
@@ -24,33 +24,20 @@ class UI extends StoreAbstract {
     createApplication(sWhere: string): App {
         const app = createApp(Application);
         app.use(this.store);
+        app.use(I18NextVue, { i18next: i18n });
         app.mount(sWhere);
         return app;
     }
 
     /**
      * Displays a popup with a text inside, and an icon
-     * @param sText
-     * @param sIconRef
-     * @param params
-     * @return {Promise<any>}
+     * @param sKey translation key (a text which is not a translation key is displayed as is)
+     * @param sIconRef icon reference (see assets/icons)
+     * @param values interpolation values, e.g. {item: 'the key'} for "You get : {{item}}"
      */
-    popup(sText, sIconRef, ...params) {
+    popup(sKey: string, sIconRef?: string, values: Record<string, any> = {}) {
         const icon = !!sIconRef && sIconRef.length > 0 ? 'assets/icons/' + sIconRef + '.png' : '';
-        let text = sText in STRINGS ? STRINGS[sText] : sText;
-        for (let i = 0, l = params.length; i < l; ++i) {
-            const p = params[i];
-            switch (typeof p) {
-                case 'string':
-                    let sParamText = ObjectExtender.objectGet(STRINGS, p);
-                    text = text.replace(/%s/, sParamText);
-                    break;
-
-                case 'number':
-                    text = text.replace(/%d/, p);
-                    break;
-            }
-        }
+        const text = i18n.t(sKey, values);
         return this.dispatch(UI_ACTIONS.SHOW_POPUP, {text, icon});
     }
 

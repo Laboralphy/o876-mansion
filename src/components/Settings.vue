@@ -1,17 +1,17 @@
 <template>
   <div class="ui-panel-window ui-size-60-90">
-    <TitleAndCo :title="STRINGS.MAIN_TAB_SETTINGS">
+    <TitleAndCo :title="$t('MAIN_TAB_SETTINGS')">
     </TitleAndCo>
     <div class="ui-setting-panel">
-      <div>{{ STRINGS.SETTINGS_MOUSE_SENS_LABEL }}</div>
+      <div>{{ $t('SETTINGS_MOUSE_SENS_LABEL') }}</div>
       <div><input @change="changeMouseFactor" ref="slideMouse" type="range" min="1" max="100" value="50" class="slider"></div>
     </div>
     <div class="ui-setting-panel">
-      <div>{{ STRINGS.SETTINGS_MUSIC_VOLUME_LABEL }}</div>
+      <div>{{ $t('SETTINGS_MUSIC_VOLUME_LABEL') }}</div>
       <div><input @change="changeMusicVolume" ref="slideMusic" type="range" min="1" max="100" value="50" class="slider"></div>
     </div>
     <div class="ui-setting-panel">
-      <div>{{ STRINGS.SETTINGS_SFX_VOLUME_LABEL }}</div>
+      <div>{{ $t('SETTINGS_SFX_VOLUME_LABEL') }}</div>
       <div><input @change="changeSFXVolume" ref="slideSFX" type="range" min="1" max="100" value="50" class="slider"></div>
     </div>
   </div>
@@ -19,7 +19,6 @@
 
 <script lang="ts">
 import { defineComponent } from 'vue';
-import strings from "@/mixins/strings";
 import TitleAndCo from "@/components/TitleAndCo.vue";
 import ui from "@/mixins/ui";
 import logic from "@/mixins/logic";
@@ -27,7 +26,7 @@ import logic from "@/mixins/logic";
 export default defineComponent({
   name: "Settings",
   components: {TitleAndCo},
-  mixins: [strings, ui, logic],
+  mixins: [ui, logic],
 
   computed: {
     mouseFactor: {

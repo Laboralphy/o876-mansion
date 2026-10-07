@@ -6,6 +6,7 @@
  * @param y {number} cell door coordinates (y axis)
  */
 import { AUDIO_EVENT_EXPLORE_DOOR_LOCKED, AUDIO_EVENT_EXPLORE_DOOR_UNLOCK } from "@/consts"
+import i18n from '@/i18n';
 
 export function init(game, remove, x, y) {
     game.engine.lockDoor(x, y, true);
@@ -24,7 +25,7 @@ export function init(game, remove, x, y) {
 export function push(game, remove, x, y, key) {
     if (!!key && game.logic.hasInventoryItem(key)) {
         remove(); // removes tag
-        game.ui.popup('EVENT_DOOR_UNLOCKED', 'unlock', 'ITEMS.' + key + '.name');
+        game.ui.popup('EVENT_DOOR_UNLOCKED', 'unlock', { key: i18n.t('items:' + key + '.name') });
         game.removeDecals(x, y); // remove keyhole decal from door
         game.engine.lockDoor(x, y, false); // unlock door
         game.soundEvent(AUDIO_EVENT_EXPLORE_DOOR_UNLOCK, {x, y})

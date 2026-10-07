@@ -1,7 +1,7 @@
 <template>
     <div class="vitals">
         <div class="ui row axial">
-            <div class="label"><span>{{ STRINGS.ATTR_HITPOINTS }}</span></div>
+            <div class="label"><span>{{ $t('ATTR_HITPOINTS') }}</span></div>
             <Gauge :width="10" color="rgb(96, 220, 255)" :max="getPlayerAttributeHPMax" :value="getPlayerAttributeHP"></Gauge>
         </div>
     </div>
@@ -10,14 +10,13 @@
 <script lang="ts">
     import { defineComponent } from 'vue';
     import Gauge from "@/components/Gauge.vue";
-    import STRINGS from '@/mixins/strings';
     import ui from "@/mixins/ui";
     import logic from '@/mixins/logic'
 
     export default defineComponent({
         name: "Vitals",
         components: {Gauge},
-        mixins: [STRINGS, ui, logic]
+        mixins: [ui, logic]
     });
 
 </script>

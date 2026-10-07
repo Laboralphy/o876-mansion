@@ -1,24 +1,22 @@
 <template>
   <div class="ui-menu-window typewriter ui-size-50-50">
     <div class="game-over">
-      {{ STRINGS.GAME_OVER }}
+      {{ $t('GAME_OVER') }}
     </div>
     <div class="game-over-caption">
-      {{ STRINGS.GAME_OVER_CAPTION }}
+      {{ $t('GAME_OVER_CAPTION') }}
     </div>
     <div class="restart" style="">
-      <button @click="gotoReload">{{ STRINGS.GAME_OVER_BUTTON_CAPTION }}</button>
+      <button @click="gotoReload">{{ $t('GAME_OVER_BUTTON_CAPTION') }}</button>
     </div>
   </div>
 </template>
 
 <script lang="ts">
 import { defineComponent } from 'vue';
-import stringsMixin from '@/mixins/strings';
 
 export default defineComponent({
   name: "GameOverPrompt",
-  mixins: [stringsMixin],
   methods: {
     gotoReload: function () {
       location.reload();

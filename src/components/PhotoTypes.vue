@@ -9,37 +9,36 @@
 
 <script lang="ts">
 import { defineComponent } from 'vue';
-import STRINGS from '@/mixins/strings';
 import TypeList from "@/components/TypeList.vue";
 import album from "@/mixins/album";
 
 export default defineComponent({
   name: "PhotoTypes",
   components: {TypeList},
-  mixins: [STRINGS, album],
+  mixins: [album],
 
   computed: {
     getTypeList: function () {
       return [
         {
           ref: 'clue',
-          caption: this.STRINGS.PHOTO_TYPES_CLUE,
+          caption: this.$t('PHOTO_TYPES_CLUE'),
         },
         {
           ref: 'wraith',
-          caption: this.STRINGS.PHOTO_TYPES_WRAITH,
+          caption: this.$t('PHOTO_TYPES_WRAITH'),
         },
         {
           ref: 'art',
-          caption: this.STRINGS.PHOTO_TYPES_ART,
+          caption: this.$t('PHOTO_TYPES_ART'),
         },
         {
           ref: 'ambient',
-          caption: this.STRINGS.PHOTO_TYPES_AMBIENT,
+          caption: this.$t('PHOTO_TYPES_AMBIENT'),
         },
         {
           ref: 'archive',
-          caption: this.STRINGS.PHOTO_TYPES_ARCHIVE,
+          caption: this.$t('PHOTO_TYPES_ARCHIVE'),
         }
       ]
     }

@@ -1,19 +1,18 @@
 <template>
   <section>
     <div class="ui-menu-window ui-size-50-50 typewriter">
-      <div class="loading">{{ STRINGS.LABEL_LOADING }}...</div>
+      <div class="loading">{{ $t('LABEL_LOADING') }}...</div>
     </div>
   </section>
 </template>
 
 <script lang="ts">
 import { defineComponent } from 'vue';
-import STRINGS from '@/mixins/strings';
 import ui from '@/mixins/ui';
 
 export default defineComponent({
   name: "TitleLoading",
-  mixins: [STRINGS, ui]
+  mixins: [ui]
 });
 
 </script>

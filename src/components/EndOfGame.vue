@@ -1,20 +1,16 @@
 <template>
   <div class="ui-menu-window typewriter ui-size-50-50">
     <div class="end-of-game-caption">
-      <p>
-      Ceci est la fin de la partie jouable. Y'aura-t-il une suite ?
-      </p>
+      <p>{{ $t('END_OF_GAME_CAPTION') }}</p>
     </div>
   </div>
 </template>
 
 <script lang="ts">
 import { defineComponent } from 'vue';
-import stringMixin from '@/mixins/strings'
 
 export default defineComponent({
   name: "EndOfGame",
-  mixins: [stringMixin]
 });
 
 </script>

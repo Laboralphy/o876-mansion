@@ -1,26 +1,25 @@
 <template>
     <div :class="'ui typewriter scores ' + (isShotVisible ? 'visible' : 'hidden')">
-        <div class="value damage" v-if="isShotDamaging">{{ STRINGS.SHOT_DAMAGE }} {{ getShotScore }}pt{{ getShotScore > 1 ? 's' : '' }}</div>
-        <div class="value" v-else>{{ STRINGS.SHOT_VALUE }} {{ getShotScore }}pt{{ getShotScore > 1 ? 's' : '' }}</div>
-        <div class="fatal" v-if="isShotFatal">{{ STRINGS.SHOT_FATAL }}</div>
-        <div v-if="isShotZero">{{ STRINGS.SHOT_ZERO }}</div>
-        <div v-if="isShotCore">{{ STRINGS.SHOT_CORE }}</div>
-        <div v-if="isShotClose">{{ STRINGS.SHOT_CLOSE }}</div>
-        <div v-if="isShotDouble">{{ STRINGS.SHOT_DOUBLE }}</div>
-        <div v-if="isShotTriple">{{ STRINGS.SHOT_TRIPLE }}</div>
-        <div v-if="isShotMultiple">{{ STRINGS.SHOT_MULTIPLE }}</div>
+        <div class="value damage" v-if="isShotDamaging">{{ $t('SHOT_DAMAGE') }} {{ getShotScore }}pt{{ getShotScore > 1 ? 's' : '' }}</div>
+        <div class="value" v-else>{{ $t('SHOT_VALUE') }} {{ getShotScore }}pt{{ getShotScore > 1 ? 's' : '' }}</div>
+        <div class="fatal" v-if="isShotFatal">{{ $t('SHOT_FATAL') }}</div>
+        <div v-if="isShotZero">{{ $t('SHOT_ZERO') }}</div>
+        <div v-if="isShotCore">{{ $t('SHOT_CORE') }}</div>
+        <div v-if="isShotClose">{{ $t('SHOT_CLOSE') }}</div>
+        <div v-if="isShotDouble">{{ $t('SHOT_DOUBLE') }}</div>
+        <div v-if="isShotTriple">{{ $t('SHOT_TRIPLE') }}</div>
+        <div v-if="isShotMultiple">{{ $t('SHOT_MULTIPLE') }}</div>
     </div>
 
 </template>
 
 <script lang="ts">
     import { defineComponent } from 'vue';
-    import STRINGS from '@/mixins/strings';
     import ui from "@/mixins/ui";
 
     export default defineComponent({
         name: "PhotoShotAttributes",
-        mixins: [STRINGS, ui]
+        mixins: [ui]
     });
 
 </script>

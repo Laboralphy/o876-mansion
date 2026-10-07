@@ -1,4 +1,5 @@
 import * as CONSTS from '@/consts'
+import i18n from '@/i18n';
 
 function destroyItem (game, x, y, item) {
     const oItem = game
@@ -14,12 +15,12 @@ function destroyItem (game, x, y, item) {
 function addItemToInventory (game, item) {
     const d = game.logic.getItemData(item);
     game.soundEvent(CONSTS.AUDIO_EVENT_EXPLORE_PICKUP_ITEM, { item: d })
-    game.ui.popup('EVENT_ITEM_ACQUIRED', d.icon, 'ITEMS.' + item + '.name');
+    game.ui.popup('EVENT_ITEM_ACQUIRED', d.icon, { item: i18n.t('items:' + item + '.name') });
     game.logic.addInventoryItem(item);
 }
 
 function addNoteToDocuments (game, item) {
-    game.ui.popup('EVENT_ITEM_ACQUIRED', 'note', 'NOTES.' + item + '.title');
+    game.ui.popup('EVENT_ITEM_ACQUIRED', 'note', { item: i18n.t('notes:' + item + '.title') });
     game.soundEvent(CONSTS.AUDIO_EVENT_EXPLORE_PICKUP_ITEM, { item: { type: 'scroll' } })
     game.ui.addNote(item)
 }

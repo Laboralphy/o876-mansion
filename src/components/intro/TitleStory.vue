@@ -7,7 +7,7 @@
       >
         <template v-slot:header>
           <div class="container">
-            <h1 class="manuscript">{{ STRINGS.INTRO_MAP_TITLE }}</h1>
+            <h1 class="manuscript">{{ $t('INTRO_MAP_TITLE') }}</h1>
             <hr/>
           </div>
         </template>
@@ -17,7 +17,7 @@
           </div>
           <div class="container manuscript">
             <p>
-              {{ STRINGS.INTRO_MAP_TASKS[splashIndex] }}
+              {{ $t('INTRO_MAP_TASKS.' + splashIndex) }}
             </p>
           </div>
         </section>
@@ -25,8 +25,8 @@
           <div class="container typewriter">
             <hr/>
             <div class="commands">
-              <button :disabled="!canNavigate" class="typewriter" @click="rewind">{{ STRINGS.COMMAND_CAPTION_PREV }}</button>
-              <button :disabled="!canNavigate" class="typewriter" @click="forward">{{ STRINGS.COMMAND_CAPTION_NEXT }}</button>
+              <button :disabled="!canNavigate" class="typewriter" @click="rewind">{{ $t('COMMAND_CAPTION_PREV') }}</button>
+              <button :disabled="!canNavigate" class="typewriter" @click="forward">{{ $t('COMMAND_CAPTION_NEXT') }}</button>
             </div>
           </div>
         </template>
@@ -38,7 +38,6 @@
 
 <script lang="ts">
 import { defineComponent } from 'vue';
-import STRINGS from '@/mixins/strings';
 import UIMixin from '@/mixins/ui';
 
 import GenericBox from "@/components/GenericBox.vue";
@@ -46,7 +45,7 @@ import GenericBox from "@/components/GenericBox.vue";
 export default defineComponent({
   name: "TitleStory",
   components: {GenericBox},
-  mixins: [STRINGS, UIMixin],
+  mixins: [UIMixin],
   data: function() {
     return {
       PHASE_LOADING: 0,

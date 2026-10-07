@@ -1,16 +1,15 @@
 <template>
-  <div class="typewriter score-section"><div class="label">{{ STRINGS.ATTR_SCORE.toUpperCase() }} :</div><div class="value">{{ getScoreString }}</div></div>
+  <div class="typewriter score-section"><div class="label">{{ $t('ATTR_SCORE').toUpperCase() }} :</div><div class="value">{{ getScoreString }}</div></div>
 </template>
 
 <script lang="ts">
 import { defineComponent } from 'vue';
 import logic from '@/mixins/logic';
 import album from '@/mixins/album';
-import strings from '@/mixins/strings'
 
 export default defineComponent({
   name: 'ScoreSection',
-  mixins: [album, logic, strings],
+  mixins: [album, logic],
   computed: {
     getScoreString: function() {
       const nAlbumScore = this.getAlbumTotalScore;

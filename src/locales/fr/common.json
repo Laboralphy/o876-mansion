@@ -1,44 +1,37 @@
 {
-  "ATTR_HITPOINTS" : "Mental",
+  "ATTR_HITPOINTS": "Mental",
   "ATTR_SCORE": "Score",
-
-  "SHOT_FATAL" : "Cadrage fatal",
-  "SHOT_ZERO" : "Tir zéro",
-  "SHOT_CLOSE" : "A bout portant",
-  "SHOT_CORE" : "Tir à cœur",
-  "SHOT_DOUBLE" : "Double tir",
-  "SHOT_TRIPLE" : "Triple tir",
-  "SHOT_MULTIPLE" : "tir multiple",
-  "SHOT_VALUE" : "Valeur",
+  "SHOT_FATAL": "Cadrage fatal",
+  "SHOT_ZERO": "Tir zéro",
+  "SHOT_CLOSE": "A bout portant",
+  "SHOT_CORE": "Tir à cœur",
+  "SHOT_DOUBLE": "Double tir",
+  "SHOT_TRIPLE": "Triple tir",
+  "SHOT_MULTIPLE": "tir multiple",
+  "SHOT_VALUE": "Valeur",
   "SHOT_DAMAGE": "Dégâts",
-
   "PHOTO_TYPES_DEBUG": "_debug",
   "PHOTO_TYPES_ART": "Art",
   "PHOTO_TYPES_CLUE": "Indices",
   "PHOTO_TYPES_WRAITH": "Spectres",
   "PHOTO_TYPES_AMBIENT": "Ambiance",
   "PHOTO_TYPES_ARCHIVE": "Archives",
-
   "ITEM_TYPES_ALL": "Tous",
   "ITEM_TYPES_QUEST": "Intrigue",
   "ITEM_TYPES_KEY": "Clés",
   "ITEM_TYPES_BOOK": "Livres",
-
   "NOTE_TYPES_NOTE": "Notes",
   "NOTE_TYPES_JOURNAL": "Journal",
   "NOTE_TYPES_HINT": "Infos",
-
   "MAIN_TAB_ALBUM": "Album",
   "MAIN_TAB_INV": "Inventaire",
   "MAIN_TAB_NOTES": "Documents",
   "MAIN_TAB_SETTINGS": "Réglages",
-
   "HINT_UI_DOCUMENTS": {
     "note": "Les notes, écrits, ou autres documents trouvés au hasard lors de votre enquête.",
     "journal": "Ces articles vous permette de résumer la progression de votre enquête.",
     "hint": "Quelques informations importantes sur la manière de jouer et de remplir les objectifs."
   },
-
   "HINT_UI_ALBUM": {
     "art": "Photos de peintures ou tableaux trouvés lors de vos pérégrinations.",
     "clue": "Photos étranges indiquant un lieu secret ou lié à un mystère.",
@@ -46,15 +39,12 @@
     "wraith": "Photos de manifestations surnaturelles, généralement sous forme de spectre.",
     "archive": "Photos utilisées en tant qu'indice et qui ont permit de résoudre un mystère."
   },
-
   "COMMAND_CAPTION_NEXT": "Suivant",
   "COMMAND_CAPTION_PREV": "Précédent",
   "COMMAND_CAPTION_START": "Démarrer",
-
   "GAME_OVER": "C'est fini",
   "GAME_OVER_CAPTION": "La présence malfaisante des fantômes a eu raison de votre santé mentale. Un nouvel esprit tourmenté hantera ces lieux.",
   "GAME_OVER_BUTTON_CAPTION": "Menu principal",
-
   "LABEL_LOADING": "Chargement",
   "GAME_TITLE": "Le hameau chelou",
   "GAME_SUB_TITLE": [
@@ -80,27 +70,71 @@
       "desc": "Activer/désactiver le mode photo."
     }
   ],
-
   "ALBUM_TAB_EMPTY": "Cette section de l'album est vide.",
   "INVENTORY_TAB_EMPTY": "Aucun objet dans cette catégorie.",
-
   "EVENT_PHOTO_MOGRIFY": "La photo s'est altérée mystérieusement !",
   "EVENT_PHOTO_ART_STORED": "Photo artistique stockée dans l'album.",
   "EVENT_PHOTO_CLUE_STORED": "Indice stocké dans l'album.",
   "EVENT_PHOTO_WRAITH_STORED": "Spectre stocké dans l'album.",
-  "EVENT_PHOTO_NAMED_STORED": "\"%s\" stockée dans l'album.",
-  "EVENT_PHOTO_ARCHIVED": "Photo \"%s\" déplacée dans l'onglet \"Archives\".",
-  "EVENT_ITEM_ACQUIRED": "Vous obtenez : %s.",
-  "EVENT_NOTE_ACQUIRED": "Vous trouvez un document : %s.",
+  "EVENT_PHOTO_NAMED_STORED": "\"{{title}}\" stockée dans l'album.",
+  "EVENT_PHOTO_ARCHIVED": "Photo \"{{title}}\" déplacée dans l'onglet \"Archives\".",
+  "EVENT_ITEM_ACQUIRED": "Vous obtenez : {{item}}.",
+  "EVENT_NOTE_ACQUIRED": "Vous trouvez un document : {{note}}.",
   "EVENT_DOOR_LOCKED": "Cette porte est verrouillée.",
-  "EVENT_DOOR_UNLOCKED": "Vous déverrouillez la porte avec : %s.",
-
+  "EVENT_DOOR_UNLOCKED": "Vous déverrouillez la porte avec : {{key}}.",
   "SETTINGS_MOUSE_SENS_LABEL": "Sensibilité souris",
   "SETTINGS_MUSIC_VOLUME_LABEL": "Volume sonore d'ambiance",
   "SETTINGS_SFX_VOLUME_LABEL": "Volume sonore des bruitages",
-
   "LOCAL": {
-    "m0": {
-    }
-  }
+    "m0": {}
+  },
+  "PLOT_STRUCT": {
+    "arrival": [
+      "La piste vous mène à un village isolé",
+      "de sinistre réputation,",
+      "perdu au coeur de la forêt."
+    ],
+    "dread_lair": [
+      "Jadis peuplé de dégénérés superstitieux,",
+      "adeptes de de magie noire et de sorcellerie..."
+    ],
+    "dark_rituals": [
+      "Des indices de pratiques occultes",
+      "de rituels grotesques et blasphématoires,",
+      "sont éparpillé dans la région."
+    ],
+    "ppl_gone": [
+      "Mais désormais le village est désert.",
+      "Toute la communauté s'est volatilisée."
+    ],
+    "something_happened": [
+      "Quelque chose s'est produit ici,",
+      "qui a fait fuir ces fanatiques.",
+      "Le mystère de leur disparition reste entier."
+    ],
+    "what_they_left": [
+      "Ce qui vous intéresse, cependant, doit",
+      "toujours être dans le village."
+    ],
+    "lost_relics": [
+      "Ces maudits sorciers ont dû abandonner",
+      "un tas de reliques, de grimoires anciens",
+      "et de tableaux de grande valeur..."
+    ],
+    "phat_loot": [
+      "Il est temps pour vous d'aller explorer",
+      "le coin et de faire main basse sur tous",
+      "ces trésors."
+    ]
+  },
+  "INTRO_MAP_TITLE": "Trucs à faire",
+  "INTRO_MAP_TASKS": [
+    "Liste des objectifs pour ce job...",
+    "1) Se rendre au village abandonné.",
+    "2) Visiter le village, vérifier qu'il soit bien désert.",
+    "3) Photographier tous les tableaux.",
+    "4) Récupérer tous les livres rares et précieux.",
+    "5) Elucider le mystère de la disparition des villageois."
+  ],
+  "END_OF_GAME_CAPTION": "Ceci est la fin de la partie jouable. Y'aura-t-il une suite ?"
 }

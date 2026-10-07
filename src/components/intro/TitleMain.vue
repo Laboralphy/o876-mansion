@@ -1,15 +1,15 @@
 <template>
   <section>
     <div class="ui-menu-window ui-size-50-50 typewriter">
-      <div class="game-title">{{ STRINGS.GAME_TITLE }}</div>
+      <div class="game-title">{{ $t('GAME_TITLE') }}</div>
       <div
           class="game-sub-title"
-          v-for="(s, i) in STRINGS.GAME_SUB_TITLE"
+          v-for="(s, i) in $t('GAME_SUB_TITLE', { returnObjects: true })"
           :key="'game-sub-title-' + i"
       >{{ s }}</div>
       <ul class="options">
         <li>
-          <button class="typewriter" @click="phase = 2">{{ STRINGS.COMMAND_CAPTION_START }}</button>
+          <button class="typewriter" @click="phase = 2">{{ $t('COMMAND_CAPTION_START') }}</button>
         </li>
       </ul>
     </div>
@@ -18,12 +18,11 @@
 
 <script lang="ts">
 import { defineComponent } from 'vue';
-import STRINGS from '@/mixins/strings';
 import ui from '@/mixins/ui';
 
 export default defineComponent({
   name: "TitleMain",
-  mixins: [STRINGS, ui]
+  mixins: [ui]
 });
 
 </script>

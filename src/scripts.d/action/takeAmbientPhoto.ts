@@ -1,4 +1,5 @@
 import * as CONSTS from '@/consts';
+import i18n from '@/i18n';
 
 export function main(game, ref, score = 0) {
     game.storePhoto(
@@ -7,7 +8,7 @@ export function main(game, ref, score = 0) {
         ref,                    // information supplémentaire (titre, description)
     );
     game.engine.delayCommand(
-        () => game.ui.popup('EVENT_PHOTO_NAMED_STORED', 'album-ambient', 'PHOTOS.' + ref + '.title'),
+        () => game.ui.popup('EVENT_PHOTO_NAMED_STORED', 'album-ambient', { title: i18n.t('photos:' + ref + '.title') }),
         CONSTS.DELAY_BETWEEN_PHOTO_AND_POPUP
     );
 }
