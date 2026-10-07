@@ -151,7 +151,7 @@ class IntroThinker extends Thinker {
 
     s_init() {
         const g = this.context.game;
-        g.screen._enablePointerlock = false;
+        g.screen.disablePointerLock();
         const locStart = g.getLocator('mi_start').position;
         const locFinish = g.getLocator('mi_finish_1').position;
         this
@@ -205,7 +205,7 @@ class IntroThinker extends Thinker {
         const ctx = cvs.getContext('2d');
         ctx.clearRect(0, 0, cvs.width, cvs.height);
         this.context.game.loadLevel('mans-cabin').then(() => {
-            this.context.game.screen._enablePointerlock = true;
+            this.context.game.screen.enablePointerLock();
             this._fadeOut.terminate();
             if (this._storyFilter instanceof AbstractFilter) {
                 this._storyFilter.terminate();

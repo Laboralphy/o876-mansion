@@ -1,4 +1,4 @@
-export async function fetchJSON(url: string): Promise<any> {
+export async function fetchJSON<T = unknown>(url: string): Promise<T> {
     try {
         const oRequest = {
             method: 'GET',
@@ -18,15 +18,15 @@ export async function fetchJSON(url: string): Promise<any> {
     }
 }
 
-export function putJSON(url: string, data: unknown): Promise<any> {
-    return sendJSON(url, 'PUT', data)
+export function putJSON<T = unknown>(url: string, data: unknown): Promise<T> {
+    return sendJSON<T>(url, 'PUT', data)
 }
 
-export function postJSON(url: string, data: unknown): Promise<any> {
-    return sendJSON(url, 'POST', data)
+export function postJSON<T = unknown>(url: string, data: unknown): Promise<T> {
+    return sendJSON<T>(url, 'POST', data)
 }
 
-export async function sendJSON(url: string, method: string, data: unknown): Promise<any> {
+export async function sendJSON<T = unknown>(url: string, method: string, data: unknown): Promise<T> {
     const oRequest: RequestInit = {
         method,
         headers: {
@@ -52,7 +52,7 @@ export async function sendJSON(url: string, method: string, data: unknown): Prom
 }
 
 
-export async function deleteJSON(url: string): Promise<any> {
+export async function deleteJSON<T = unknown>(url: string): Promise<T> {
 
     const oRequest = {
         method: 'DELETE',

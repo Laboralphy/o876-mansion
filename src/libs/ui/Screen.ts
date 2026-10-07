@@ -1,6 +1,6 @@
 import ManagedElement from "@/libs/ui/ManagedElement";
 import PointerLock from '@/libs/pointer-lock';
-import Events from '@/libs/events';
+import Events, { type EventListener } from '@/libs/events';
 
 /**
  * The screen class manages a surface (usually a canvas or a video) and an overlay (usually a div).
@@ -55,11 +55,11 @@ class Screen {
         this.buildStructure(comp);
     }
 
-    on(event: string, listener: (...args: any[]) => void) {
+    on(event: string, listener: EventListener): void {
         this._events.on(event, listener);
     }
 
-    off(event: string, listener: (...args: any[]) => void) {
+    off(event: string, listener: EventListener): void {
         this._events.off(event, listener);
     }
 

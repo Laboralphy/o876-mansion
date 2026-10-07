@@ -1,4 +1,5 @@
 import VengefulThinker from "@/thinkers.d/VengefulThinker";
+import LinearBoltThinker from "@/thinkers.d/LinearBoltThinker";
 
 /**
  * 1) Le fantôme se dirige en ligne droite vers sa cible, pendant 3 secondes, si la cible se déplace, le fantôme
@@ -57,7 +58,7 @@ class ShooterWalkerThinker extends VengefulThinker {
             : this.entity.data.missile
         const sMissileResRef = oMissileData.resref
         const missile = this.engine.createEntity(sMissileResRef, this.entity.position);
-        missile.thinker.fire(this.entity, oMissileData);
+        (missile.thinker as LinearBoltThinker).fire(this.entity, oMissileData);
     }
 }
 

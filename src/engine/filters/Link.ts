@@ -6,20 +6,16 @@ import AbstractFilter from "@/libs/filters/AbstractFilter";
  * When a filter is over, the next in place is initiated, until all filters are over.
  */
 class Link extends AbstractFilter {
-    _children: any;
-    _nProcessTime: any;
+    _children: AbstractFilter[];
 
 
-    constructor(children) {
+    constructor(children: AbstractFilter[]) {
         super();
         this._children = children;
     }
 
-    process() {
-        /**
-         * the current active child
-         * @type {AbstractFilter}
-         */
+    process(): void {
+        // the current active child
         let currentChild = this._children.length > 0 ? this._children[0] : null;
         if (currentChild === null) {
             return;
@@ -33,13 +29,13 @@ class Link extends AbstractFilter {
         }
     }
 
-    render(canvas) {
+    render(canvas: HTMLCanvasElement): void {
         if (this._children.length > 0) {
             this._children[0].render(canvas);
         }
     }
 
-    over() {
+    over(): boolean {
         return super.over() || this._children.length === 0;
     }
 }

@@ -1,4 +1,15 @@
 import Automaton from "@/libs/automaton";
+import type Entity from "@/engine/Entity";
+import type Engine from "@/engine/Engine";
+
+/**
+ * Data shared by all thinkers (given to Engine.useThinkers()).
+ * Empty at engine level : the game extends it by declaration merging, e.g.
+ * declare module '@/engine/thinkers/Thinker' { interface ThinkerContext { game: Game } }
+ */
+export interface ThinkerContext {}
+
+export type ThinkerClass = new () => Thinker;
 
 /**
  * a class with basic mechanism to manage states.
@@ -6,10 +17,10 @@ import Automaton from "@/libs/automaton";
  */
 class Thinker {
     _automaton: Automaton;
-    _context: any;
-    _engine: any;
-    _entity: any;
-    _timeStart: any;
+    _context: ThinkerContext;
+    _engine: Engine;
+    _entity: Entity;
+    _timeStart: number;
 
     constructor() {
         this._context = null;
@@ -32,19 +43,19 @@ class Thinker {
         })
     }
 
-    get debugString () {
-        return this._entity
+    get debugString (): string {
+        return this._entity.debugString
     }
 
-    get context() {
+    get context(): ThinkerContext {
         return this._context;
     }
 
-    get automaton() {
+    get automaton(): Automaton {
         return this._automaton;
     }
 
-    emit(sEvent, payload) {
+    emit(sEvent: string, payload: object = {}): void {
         if (this.engine) {
             this.engine.events.emit('think.' + sEvent, {
                 ...payload,
@@ -53,30 +64,31 @@ class Thinker {
         }
     }
 
-    get entity() {
+    get entity(): Entity {
         return this._entity;
     }
 
-    set entity(value) {
+    set entity(value: Entity) {
         this._entity = value;
     }
 
-    get engine() {
+    get engine(): Engine {
         return this._engine;
     }
 
-    set engine(value) {
+    set engine(value: Engine) {
         this._engine = value;
     }
 
     /**
      * Invoke a method in this instance
-     * @param sMeth
-     * @param parameters {*}
+     * @param sMeth method name
+     * @param parameters method parameters
      */
-    _invoke(sMeth, ...parameters) {
-        if (sMeth in this) {
-            return this[sMeth](...parameters);
+    _invoke(sMeth: string, ...parameters: unknown[]): unknown {
+        const meth = (this as unknown as Record<string, unknown>)[sMeth];
+        if (typeof meth === 'function') {
+            return meth.apply(this, parameters);
         } else {
             throw new Error('This method "' + sMeth + '" does not existe in this thinker.')
         }
@@ -86,18 +98,18 @@ class Thinker {
      * return elapsed time since creation or since modification
      * @return {number}
      */
-    get elapsedTime() {
+    get elapsedTime(): number {
         return this._engine.getTime() - this._timeStart;
     }
 
-    set elapsedTime(value) {
+    set elapsedTime(value: number) {
         this._timeStart = this._engine.getTime() - value;
     }
 
     /**
      * thinks
      */
-    think() {
+    think(): void {
         if (this._timeStart === null) {
             this._timeStart = this._engine.getTime()
         }

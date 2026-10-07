@@ -10,31 +10,31 @@ import CanvasHelper from "@/libs/canvas-helper";
  * const f = new Blur(4);
  */
 class Blur extends AbstractFilter {
-    _cvsBlur: any;
-    _cvsBlur2: any;
-    _nRadius: any;
+    _cvsBlur: HTMLCanvasElement;
+    _cvsBlur2: HTMLCanvasElement;
+    _nRadius: number;
 
 
-    constructor(radius) {
+    constructor(radius: number) {
         super();
         this._cvsBlur = null;
         this._cvsBlur2 = null;
         this.setRadius(radius);
     }
 
-    setRadius(n) {
+    setRadius(n: number): void {
         this._nRadius = n;
         this._cvsBlur = null;
     }
 
-    createCanvas(width, height) {
+    createCanvas(width: number, height: number): void {
         this._cvsBlur = CanvasHelper.createCanvas(width / this._nRadius | 0, height / this._nRadius | 0);
         this._cvsBlur2 = CanvasHelper.createCanvas(width, height);
         CanvasHelper.setImageSmoothing(this._cvsBlur, true);
         CanvasHelper.setImageSmoothing(this._cvsBlur2, true);
     }
 
-    render(canvas) {
+    render(canvas: HTMLCanvasElement): void {
         if (this._cvsBlur === null) {
             this.createCanvas(canvas.width, canvas.height);
         }

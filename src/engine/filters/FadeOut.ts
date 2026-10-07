@@ -21,7 +21,7 @@ class FadeOut extends Link {
     constructor({
         color = 'black',
         duration = 1000
-    }) {
+    }: { color?: string, duration?: number }) {
         const pc = new Foreground(color);
         const pulse = new Pulse({
             from: 0,

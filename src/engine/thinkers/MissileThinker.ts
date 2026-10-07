@@ -1,6 +1,7 @@
 import TangibleThinker from "@/engine/thinkers/TangibleThinker";
 import Geometry from "@/libs/geometry";
 import * as CONSTS from "@/engine/consts";
+import type Entity from "@/engine/Entity";
 
 /**
  * This thinker is specialized for missile entities
@@ -8,10 +9,9 @@ import * as CONSTS from "@/engine/consts";
  */
 class MissileThinker extends TangibleThinker {
     _bCrashWall: boolean;
-    _cwc: any;
-    _owner: any;
+    _owner: Entity;
     _speedNorm: number;
-    _victims: any[];
+    _victims: Entity[];
 
     constructor() {
         super();
@@ -62,10 +62,10 @@ class MissileThinker extends TangibleThinker {
 
     /**
      * Positionnement du missile devant le owner
-     * @param owner
-     * @param speed
+     * @param owner entity that fires the missile
+     * @param speed missile speed
      */
-    fire(owner, speed) {
+    fire(owner: Entity, speed: number): void {
         // sets the owner
         this._owner = owner;
 
@@ -86,7 +86,7 @@ class MissileThinker extends TangibleThinker {
         this.setAngle(oOwnerLocation.angle)
     }
 
-    setAngle (a) {
+    setAngle (a: number): void {
         this.entity.position.angle = a
         const {dx, dy} = Geometry.polar2rect(a, this._speedNorm);
         this.setSpeed(dx, dy);
@@ -96,18 +96,10 @@ class MissileThinker extends TangibleThinker {
     /**
      * retrieve a list of dummies that collides with this entity
      * does not include owner
-     * @returns {Dummy[]}
      */
-    getCollidingEntities() {
-        const aEntities = this.entity.dummy.smashers;
-        if (!!aEntities && aEntities.length > 0) {
-            // expel owner from colliding dummies list
-            const nOwnerIndex = aEntities.indexOf(this._owner);
-            if (nOwnerIndex >= 0) {
-                aEntities.splice(nOwnerIndex, 1);
-            }
-        }
-        return aEntities;
+    getCollidingEntities(): Entity[] {
+        // the smasher files entities as smashers (opaque for the dummy) : owner is expelled from the list
+        return (this.entity.dummy.smashers as Entity[]).filter(e => e !== this._owner);
     }
 
     ////// STATES ///// STATES ///// STATES ///// STATES ///// STATES ///// STATES ///// STATES ///// STATES /////
@@ -116,12 +108,12 @@ class MissileThinker extends TangibleThinker {
 
     // the missile is not colliding with owner :
     // the missile becomes solid and will hit any other entity.
-    $becomeFullSolid() {
+    $becomeFullSolid(): void {
         this.entity.dummy.tangibility.hitmask = CONSTS.COLLISION_CHANNEL_CREATURE;
     }
 
     // The missile has hit something
-    $dead() {
+    $dead(): void {
         this.entity.dead = true;
     }
 
@@ -132,7 +124,7 @@ class MissileThinker extends TangibleThinker {
     ////// TRANSITIONS ////// TRANSITIONS ////// TRANSITIONS ////// TRANSITIONS ////// TRANSITIONS //////
 
     // true if missile is not colliding owner
-    $isOutsideOwner() {
+    $isOutsideOwner(): boolean {
         // calculer la distance entre owner et missile
         const m = this.entity;
         const o = this._owner;
@@ -145,7 +137,7 @@ class MissileThinker extends TangibleThinker {
      * returns true if this entity hits something (wall or other entity)
      * @return {boolean}
      */
-    $hitSomething() {
+    $hitSomething(): boolean {
         const bHitWall = !!this._cwc.wcf.c;
         const aHitters = this.getCollidingEntities();
         const bHitThing = !!aHitters && aHitters.length > 0;
@@ -156,7 +148,7 @@ class MissileThinker extends TangibleThinker {
      * returns true if the current sprite animation is finished
      * @return {boolean}
      */
-    $isExplosionFinished() {
+    $isExplosionFinished(): boolean {
         return this.entity.sprite.getCurrentAnimation().frozen;
     }
 }

@@ -7,21 +7,23 @@ import AbstractFilter from "@/libs/filters/AbstractFilter";
  * @description This filter will apply a layer fill with one specified fill style
  * the fill style can be any valid HTML Canvas fill style such as a plain color, or a gradient
  */
+export type FillStyle = string | CanvasGradient | CanvasPattern;
+
 class Foreground extends AbstractFilter {
-    _style: any;
+    _style: FillStyle;
 
 
     /**
      *
      * @param style {string} the fill style of the layer
      */
-    constructor(style = 'black') {
+    constructor(style: FillStyle = 'black') {
         super();
         this._style = style;
     }
 
 
-    render(canvas) {
+    render(canvas: HTMLCanvasElement): void {
         const context = canvas.getContext('2d');
         context.save();
         context.fillStyle = this._style;

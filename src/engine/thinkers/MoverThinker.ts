@@ -9,7 +9,7 @@ import Vector from "@/libs/geometry/Vector";
 class MoverThinker extends Thinker {
     _bCrashWall: boolean;
     _bHasChangedMovement: boolean;
-    _cwc: any;
+    _cwc: ReturnType<typeof computeWallCollisions>;
     _speed: Vector;
     _xSector: number;
     _ySector: number;
@@ -34,13 +34,13 @@ class MoverThinker extends Thinker {
      * returns true if the entity has changed its movement
      * i.e. its speed vector has changed, or its angle has changed
      */
-    hasChangedMovement() {
+    hasChangedMovement(): boolean {
         let b = this._bHasChangedMovement;
         this._bHasChangedMovement = false;
         return b;
     }
 
-    hasChangedSector() {
+    hasChangedSector(): boolean {
         const xSector = this.entity.sector.x;
         const ySector = this.entity.sector.y;
         const bChanged = this._xSector !== xSector || this._ySector !== ySector;
@@ -54,15 +54,15 @@ class MoverThinker extends Thinker {
     /**
      * the entity movement has changed
      */
-    changeMovement() {
+    changeMovement(): void {
         this._bHasChangedMovement = true;
     }
 
     /**
      * smooth movement from current position to a new position
-     * @param v
+     * @param v movement vector
      */
-    slide(v) {
+    slide(v: { x: number, y: number }): void {
         if (v.x === 0 && v.y === 0) {
             return;
         }
@@ -96,15 +96,15 @@ class MoverThinker extends Thinker {
      * @param y {number}
      * @param angle {number?}
      */
-    setLocation(x, y, angle?) {
+    setLocation(x: number, y: number, angle?: number): void {
         const entity = this.entity;
-        const position = entity.position.set(x, y);
+        const position = entity.position.set({x, y});
         if (angle !== undefined) {
             position.angle = angle;
         }
     }
 
-    getMovement() {
+    getMovement(): { a: number, x: number, y: number, sx: number, sy: number } {
         let m = this.entity;
         let loc = m.position;
         let spd = m.inertia;
@@ -122,7 +122,7 @@ class MoverThinker extends Thinker {
      * @param sx {number|Vector}
      * @param [sy] {number}
      */
-    setSpeed(sx, sy = 0) {
+    setSpeed(sx: Vector | number, sy: number = 0): void {
         if (sx instanceof Vector) {
             this.changeMovement();
             this._speed.set(sx);
@@ -136,7 +136,7 @@ class MoverThinker extends Thinker {
     /**
      * thinker main method
      */
-    $move() {
+    $move(): void {
         let m = this.entity;
         m.inertia.set(0, 0);
         this.slide(this._speed);

@@ -7,5 +7,5 @@ declare module '*.vue' {
 }
 
 interface Window {
-    GAME: any;
+    GAME: import('@/Game').default;
 }

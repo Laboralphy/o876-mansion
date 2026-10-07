@@ -2,6 +2,8 @@ import { Dummy, type Sector, type SmashingEntity } from '@laboralphy/raycaster38
 import type { LightHandle, Sprite } from '@laboralphy/raycaster386';
 import Position from './Position';
 import Vector from '@/libs/geometry/Vector';
+import type Thinker from './thinkers/Thinker';
+import type Engine from './Engine';
 
 let LAST_ID = 0;
 
@@ -22,7 +24,7 @@ class Entity implements SmashingEntity {
     private readonly _position = new Position();
     private _visible = false;
     private _sprite: Sprite | null = null;
-    private _thinker: any = null;
+    private _thinker: Thinker = null;
     private _size = 0;
     _inertia = new Vector();
     private _dead = false;
@@ -69,9 +71,9 @@ class Entity implements SmashingEntity {
         this._ref = value;
     }
 
-    think(engine: any) {
+    think(engine: Engine): void {
         try {
-            this._thinker.think(this, engine);
+            this._thinker.think();
         } catch (e) {
             console.debug(this.debugString);
             throw e;
@@ -94,11 +96,11 @@ class Entity implements SmashingEntity {
         this._visible = value;
     }
 
-    get thinker(): any {
+    get thinker(): Thinker {
         return this._thinker;
     }
 
-    set thinker(value: any) {
+    set thinker(value: Thinker) {
         value.entity = this;
         this._thinker = value;
     }

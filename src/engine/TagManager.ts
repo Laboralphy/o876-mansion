@@ -1,6 +1,7 @@
 import { TagGrid, type TagGridState } from '@laboralphy/raycaster386/simulation';
 import Events from '@/libs/events';
 import type Entity from './Entity';
+import type Engine from './Engine';
 
 /**
  * Adapter over the simulation TagGrid, exposing the API of the original libs/tag-grid
@@ -122,7 +123,7 @@ class TagManager {
         }
     }
 
-    hordeProcess(engine: any) {
+    hordeProcess(engine: Engine) {
         const tg = this._tg;
         const ps = engine.cellSize;
         const process = (e: Entity) => {

@@ -9,21 +9,21 @@ import AbstractFilter from '@/libs/filters/AbstractFilter';
  *
  */
 class Halo extends AbstractFilter {
-    _color: any;
-    _gradient: any;
+    _color: string;
+    _gradient: CanvasGradient;
 
 
     /**
      * The constructor accepts a color for the halo
      * @param color {string}
      */
-    constructor(color = 'black') {
+    constructor(color: string = 'black') {
         super();
         this._gradient = null;
         this._color = color;
     }
 
-    buildGradient(canvas, color) {
+    buildGradient(canvas: HTMLCanvasElement, color: string): CanvasGradient {
         const context = canvas.getContext('2d');
         const w2 = canvas.width >> 1;
         const h2 = canvas.height >> 1;
@@ -34,15 +34,15 @@ class Halo extends AbstractFilter {
         return grad;
     }
 
-    process(time?) {
+    process(time?: number): void {
         super.process(time);
     }
 
-    clearGradient() {
+    clearGradient(): void {
         this._gradient = null;
     }
 
-    render(canvas) {
+    render(canvas: HTMLCanvasElement): void {
         if (this._gradient === null) {
             this._gradient = this.buildGradient(canvas, this._color);
         }

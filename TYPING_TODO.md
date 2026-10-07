@@ -29,7 +29,7 @@ npx vue-tsc --noEmit --noImplicitAny
 | | step | files | functions | parameters |
 |---|---|---:|---:|---:|
 | [x] | Step 1 — leaf libraries | 20 | 115 | 219 |
-| [ ] | Step 2 — engine (compat layer over raycaster386) | 14 | 52 | 68 |
+| [x] | Step 2 — engine (compat layer over raycaster386) | 14 | 52 | 68 |
 | [ ] | Step 3 — stores | 5 | 43 | 56 |
 | [ ] | Step 4 — game core classes | 8 | 96 | 171 |
 | [ ] | Step 5 — game visual filters | 12 | 39 | 63 |
@@ -39,6 +39,29 @@ npx vue-tsc --noEmit --noImplicitAny
 | | **total** | | **460** | **849** |
 
 **Remaining after step 1 : 625** (some parameters of later steps were typed for free by the typed libraries).
+**Remaining after step 2 : 532.**
+
+### Explicit `any`
+
+Untyped parameters are not the only holes : explicit `any` (`: any`, `as any`, `any[]`, `<any>`) is tracked too.
+
+```bash
+grep -rnoE ':\s*any\b|as any\b|<any>|any\[\]' src --include=*.ts --include=*.vue | wc -l
+```
+
+| after | explicit `any` |
+|---|---:|
+| start of step 2 | 171 |
+| step 2 | 88 — none left in `src/engine`, only `src/libs/events.ts` in `src/libs` |
+
+`libs/events.ts` keeps `(...args: any[])` on purpose : it is what lets listeners destructure their payload
+(`.on('x', ({a, b}) => ...)`). Removing it requires a typed event map per emitter.
+
+Shared types available for the next steps :
+- `ThinkerContext` (`engine/thinkers/Thinker.ts`), extended by `Game.ts` with `game: Game` (declaration merging)
+- `ThinkerClass`, `StateDefinition`, `Transition`, `ScriptParameters`
+- `GameOptions` (`engine/GameAbstract.ts`), `PulseOptions`, `FillStyle`, `TilesetAnimation`
+- `Game.playerThinker` : the camera thinker, typed as `PlayerThinker`
 
 ## Step 1 — leaf libraries
 

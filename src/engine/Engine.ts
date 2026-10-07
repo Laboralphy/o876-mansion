@@ -17,7 +17,11 @@ import {
     loadLevel,
     type CellSurfaceManager,
     type LightHandle,
+    type Face,
+    type RceBlueprint,
     type RceLevel,
+    type RceStartPoint,
+    type RceTileset,
     type ShadedTileSet,
     type BuiltMaterial
 } from '@laboralphy/raycaster386';
@@ -25,35 +29,39 @@ import {
     DoorPolicy,
     Scheduler,
     Smasher,
-    type DoorContext
+    type DoorContext,
+    type DoorManagerStateEntry,
+    type TagGridState
 } from '@laboralphy/raycaster386/simulation';
 
 import * as CONSTS from './consts';
 import Horde from './Horde';
 import Entity from './Entity';
-import Blueprint from './Blueprint';
+import Blueprint, { type BlueprintAnimation, type TilesetAnimation } from './Blueprint';
 import Camera from './Camera';
 import Position, { type PositionData } from './Position';
 import TagManager, { type TagManagerEvent } from './TagManager';
 import thinkers from './thinkers';
+import type Thinker from './thinkers/Thinker';
+import type { ThinkerClass, ThinkerContext } from './thinkers/Thinker';
 import FilterManager from '@/libs/filters/FilterManager';
 import Events from '@/libs/events';
 
 export interface EngineConfig {
-    thinkers: Record<string, any>;
+    thinkers: Record<string, ThinkerClass>;
     cameraThinker: string;
 }
 
 export interface BuildLevelExtra {
     startpoint?: number;
-    blueprints?: any[];
-    tilesets?: any[];
+    blueprints?: RceBlueprint[];
+    tilesets?: RceTileset[];
 }
 
 export interface EngineState {
-    doors: any[];
+    doors: DoorManagerStateEntry[];
     locks: number[];
-    tags: any;
+    tags: TagGridState;
     time: number;
 }
 
@@ -107,12 +115,12 @@ class Engine {
     private _scheduler: Scheduler | null = null;
     _tm: TagManager | null = null;
     private _cellSize: number | undefined = undefined;
-    private _startpoints: any[] = [];
-    private _declaredTilesets: Map<string | number, any> = new Map();
+    private _startpoints: RceStartPoint[] = [];
+    private _declaredTilesets: Map<string | number, RceTileset> = new Map();
 
     // instanciate at construct
-    private readonly _thinkers: Record<string, any> = {};
-    private readonly _thinkerContext: Record<string, any> = {};
+    private readonly _thinkers: Record<string, ThinkerClass> = {};
+    private readonly _thinkerContext: Partial<ThinkerContext> = {};
     private readonly _smasher = new Smasher();
 
     // init
@@ -244,7 +252,7 @@ class Engine {
      * The renderer does not expose it publicly, but the game manipulates decals at runtime.
      */
     get surfaces(): CellSurfaceManager {
-        return (this._rc as any)._csm;
+        return (this._rc as unknown as { _csm: CellSurfaceManager })._csm;
     }
 
     getTime(): number {
@@ -546,7 +554,7 @@ class Engine {
      * Removes the decal painted on a block face
      */
     removeDecal(x: number, y: number, face: number) {
-        this.surfaces.removeDecal(x, y, face as any);
+        this.surfaces.removeDecal(x, y, face as Face);
     }
 
     /**
@@ -560,8 +568,8 @@ class Engine {
      * Paints the given image on a block face, replacing any previous decal
      */
     setDecal(x: number, y: number, face: number, oImage: HTMLCanvasElement) {
-        this.surfaces.setDecal(x, y, face as any, oImage);
-        this._rc.shadeSurface(x, y, face as any);
+        this.surfaces.setDecal(x, y, face as Face, oImage);
+        this._rc.shadeSurface(x, y, face as Face);
     }
 
 //           _              _       _
@@ -631,15 +639,13 @@ class Engine {
      * @param sThinker reference of thinker
      * @param pThinker thinker class
      */
-    _useThinker(sThinker: string, pThinker: any) {
+    _useThinker(sThinker: string, pThinker: ThinkerClass): void {
         this._thinkers[sThinker] = pThinker;
     }
 
-    useThinkers(oThinkers: Record<string, any>, oContext: Record<string, any> = undefined) {
+    useThinkers(oThinkers: Record<string, ThinkerClass>, oContext: Partial<ThinkerContext> = undefined): void {
         if (oContext !== undefined) {
-            for (const s in oContext) {
-                this._thinkerContext[s] = oContext[s];
-            }
+            Object.assign(this._thinkerContext, oContext);
         }
         for (const sThinker in oThinkers) {
             this._useThinker(sThinker, oThinkers[sThinker]);
@@ -652,7 +658,7 @@ class Engine {
      * @param oItems collection of items
      * @param sLabel a label in case of error
      */
-    _getObjectItem(sItem: string, oItems: Record<string, any>, sLabel: string): any {
+    _getObjectItem<T>(sItem: string, oItems: Record<string, T>, sLabel: string): T {
         if (typeof oItems !== 'object') {
             throw new Error(`this is not a collection of "${sLabel}"`);
         }
@@ -674,7 +680,7 @@ class Engine {
      * @param sThinker thinker class name to be instanciated, the class must have been previously register with
      * either the method _useThinker(), or the method useThinkers() (with an "s")
      */
-    createThinkerInstance(sThinker: string): any {
+    createThinkerInstance(sThinker: string): Thinker {
         try {
             if (!sThinker) {
                 sThinker = 'Thinker';
@@ -682,7 +688,7 @@ class Engine {
             const pThinker = this._getObjectItem(sThinker, this._thinkers, 'thinker');
             const oThinker = new pThinker();
             oThinker.engine = this;
-            oThinker._context = this._thinkerContext;
+            oThinker._context = this._thinkerContext as ThinkerContext;
             return oThinker;
         } catch (e) {
             console.error(e);
@@ -727,7 +733,7 @@ class Engine {
      * @param resref new blueprint reference
      * @param bpDef the blueprint structure (symbolic constants already resolved)
      */
-    async createBlueprint(resref: string, bpDef: any): Promise<Blueprint> {
+    async createBlueprint(resref: string, bpDef: RceBlueprint): Promise<Blueprint> {
         const tsDef = this._declaredTilesets.get(bpDef.tileset);
         if (!tsDef) {
             throw new Error('blueprint "' + resref + '" references a tileset : "' + bpDef.tileset + '" which does not exist');
@@ -736,7 +742,7 @@ class Engine {
         const tileWidth = tsDef.width;
         const tileHeight = tsDef.height;
         const bNoShading = ('fx' in bpDef) && bpDef.fx.includes(CONSTS.FX_LIGHT_SOURCE);
-        const tileset = await this.loadTileSet(bpDef.tileset, src, tileWidth, tileHeight, bNoShading);
+        const tileset = await this.loadTileSet(String(bpDef.tileset), src, tileWidth, tileHeight, bNoShading);
         const bp = new Blueprint();
         bp.tileset = tileset;
         if (('thinker' in bpDef) && !!bpDef.thinker) {
@@ -745,8 +751,9 @@ class Engine {
             bp.thinker = 'Thinker';
         }
         if ('animations' in tsDef) {
-            const bpa = {};
-            tsDef.animations.forEach(a => {
+            const bpa: Record<string, BlueprintAnimation> = {};
+            // the renderer does not interpret tileset animations : they belong to the game
+            (tsDef.animations as readonly TilesetAnimation[]).forEach(a => {
                 bpa[a.id] = {
                     start: a.start,
                     length: a.length,
@@ -762,7 +769,7 @@ class Engine {
         }
         bp.size = bpDef.size;
         bp.lightsource = bpDef.lightsource;
-        bp.fx = bpDef.fx || [];
+        bp.fx = (bpDef.fx || []) as number[]; // symbolic constants are already resolved
         bp.scale = bpDef.scale || 1;
         bp.ref = bpDef.ref;
         return this._blueprints[resref] = bp;
@@ -815,7 +822,7 @@ class Engine {
                 sprite.buildAnimation({
                     starts: Array.isArray(start) ? start : [start],
                     length,
-                    loop: loop as any,
+                    loop,
                     duration,
                     iterations: iterations ?? null
                 }, iAnim);
@@ -981,9 +988,9 @@ class Engine {
         this.initializeDoors();
 
         // creates blueprints
-        for (const oThatBP of loaded.unhandled.blueprints as any[]) {
+        for (const oThatBP of loaded.unhandled.blueprints) {
             showProgress('creating blueprints');
-            const resref = oThatBP.id;
+            const resref = String(oThatBP.id);
             const oBP = await this.createBlueprint(resref, oThatBP);
             if (typeof oBP.ref === 'string' && oBP.ref.length > 0) {
                 this._refs[oBP.ref] = resref;
@@ -1009,9 +1016,9 @@ class Engine {
         this._smasher.setSize(nSmasherSize, nSmasherSize);
 
         // static objects
-        for (const o of loaded.unhandled.objects as any[]) {
-            const entity = this.createEntity(o.blueprint, o);
-            if ('animation' in o && o.animation !== false && o.animation !== null) {
+        for (const o of loaded.unhandled.objects) {
+            const entity = this.createEntity(String(o.blueprint), o);
+            if (o.animation) { // may be missing, null, or false in older levels
                 entity.sprite.setCurrentAnimation(o.animation, 0);
             }
             entity.visible = true;
@@ -1026,7 +1033,7 @@ class Engine {
             angle, // looking angle
             z // visor altitude (1 is the default object)
         });
-        const oCameraData: any = loaded.unhandled.camera ?? {};
+        const oCameraData = (loaded.unhandled.camera ?? {}) as { thinker?: string };
         this.camera.thinker = this.createThinkerInstance(oCameraData.thinker || this._config.cameraThinker);
         this._startpoints = loaded.startpoints.slice();
 
@@ -1067,7 +1074,7 @@ class Engine {
         return this._doors.state.doors;
     }
 
-    setDoorManagerState(value: any[]) {
+    setDoorManagerState(value: DoorManagerStateEntry[]) {
         this._doors.setState({doors: value, locks: this._doors.state.locks});
     }
 }

@@ -1,19 +1,27 @@
 import AbstractFilter from "@/libs/filters/AbstractFilter";
-import Easing from "@/libs/easing";
+import Easing, { type EasingSpec } from "@/libs/easing";
+
+export type PulseOptions = {
+    from?: number,
+    to?: number,
+    loops?: number,
+    duration?: number,
+    easing?: EasingSpec,
+    child: AbstractFilter
+};
 
 /**
  * @class Pulse
  * @description This filter will accepts a sub filter and will display it with an alpha pulsating effect.
  */
 class Pulse extends AbstractFilter {
-    _bPulse: any;
-    _child: any;
+    _bPulse: boolean;
+    _child: AbstractFilter;
     _direction: number;
     _easing: Easing;
-    _fromAlpha: any;
-    _loops: any;
-    _nProcessTime: any;
-    _toAlpha: any;
+    _fromAlpha: number;
+    _loops: number;
+    _toAlpha: number;
 
 
     /**
@@ -32,7 +40,7 @@ class Pulse extends AbstractFilter {
         duration = 1000,
         easing = Easing.LINEAR,
         child
-    }) {
+    }: PulseOptions) {
         super();
         this._fromAlpha = from;
         this._toAlpha = to;
@@ -45,19 +53,19 @@ class Pulse extends AbstractFilter {
         this.fwd();
     }
 
-    fwd() {
+    fwd(): void {
         if (this._bPulse) {
             this._easing.reset().from(this._fromAlpha).to(this._toAlpha).reset();
         }
     }
 
-    bwd() {
+    bwd(): void {
         if (this._bPulse) {
             this._easing.reset().to(this._fromAlpha).from(this._toAlpha).reset();
         }
     }
 
-    yoyo() {
+    yoyo(): void {
         switch (this._direction) {
             case 0:
                 this.bwd();
@@ -70,7 +78,7 @@ class Pulse extends AbstractFilter {
         this._direction = 1 - this._direction;
     }
 
-    process() {
+    process(): void {
         const easing = this._easing;
         if (this._bPulse) {
             if (easing.over()) {
@@ -86,7 +94,7 @@ class Pulse extends AbstractFilter {
         this._child.computeClock(this._nProcessTime)
     }
 
-    render(canvas) {
+    render(canvas: HTMLCanvasElement): void {
         super.render(canvas);
         const context = canvas.getContext('2d');
         context.save();
@@ -95,7 +103,7 @@ class Pulse extends AbstractFilter {
         context.restore();
     }
 
-    over() {
+    over(): boolean {
         return super.over() || this._loops <= 0;
     }
 }

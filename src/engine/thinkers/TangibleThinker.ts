@@ -17,7 +17,7 @@ class TangibleThinker extends MoverThinker {
         })
     }
 
-    processForces() {
+    processForces(): void {
         // synchronizing dummy position
         const entity = this.entity;
         const dummy = entity.dummy;
@@ -31,12 +31,12 @@ class TangibleThinker extends MoverThinker {
     ////// STATES ////// STATES ////// STATES ////// STATES ////// STATES ////// STATES ////// STATES //////
     ////// STATES ////// STATES ////// STATES ////// STATES ////// STATES ////// STATES ////// STATES //////
 
-    $init() {
+    $init(): void {
         this.engine.smasher.registerEntity(this.entity);
         this.processForces();
     }
 
-    $move() {
+    $move(): void {
         super.$move();
         this.processForces();
     }

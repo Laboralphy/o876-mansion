@@ -4,12 +4,12 @@ import CanvasHelper from "@/libs/canvas-helper";
 
 class Flash extends AbstractFilter {
     _easing: Easing;
-    _tmpCanvas: any;
+    _tmpCanvas: HTMLCanvasElement;
 
     constructor({
         duration = 1000,
         strength = 3
-    } = {}) {
+    }: { duration?: number, strength?: number } = {}) {
         super();
         this._easing = new Easing();
         this
@@ -21,13 +21,13 @@ class Flash extends AbstractFilter {
         this._tmpCanvas = null;
     }
 
-    process() {
+    process(): void {
         const easing = this._easing;
         easing.x += this.delta;
 
     }
 
-    render(canvas) {
+    render(canvas: HTMLCanvasElement): void {
         if (!this._tmpCanvas) {
             this._tmpCanvas = CanvasHelper.createCanvas(canvas.width, canvas.height);
         }
@@ -55,7 +55,7 @@ class Flash extends AbstractFilter {
         context.drawImage(tc, 0, 0);
     }
 
-    over() {
+    over(): boolean {
         return super.over() || this._easing.over();
     }
 }

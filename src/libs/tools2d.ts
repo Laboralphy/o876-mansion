@@ -5,6 +5,11 @@ export type Row<T> = { length: number, [x: number]: T };
 export type Array2D<T> = Row<T>[];
 
 /**
+ * Row constructor : Array, or a typed array constructor (Uint8Array, Float32Array...)
+ */
+export type RowConstructor = new (length: number) => Row<unknown>;
+
+/**
  * création rapide d'une matrice 2D
  * @param w {number}
  * @param h {number}
@@ -13,10 +18,10 @@ export type Array2D<T> = Row<T>[];
  * @returns {[]}
  * @private
  */
-function createArray2D<T>(w: number, h: number, feed: T | ((x: number, y: number) => T), pType: any = Array): Array2D<T> {
+function createArray2D<T>(w: number, h: number, feed: T | ((x: number, y: number) => T), pType: RowConstructor = Array): Array2D<T> {
     const a: Array2D<T> = [];
     for (let y = 0; y < h; ++y) {
-        const r = new pType(w);
+        const r = new pType(w) as Row<T>;
         for (let x = 0; x < w; ++x) {
             r[x] = feed instanceof Function
                 ? (feed as (x: number, y: number) => T)(x, y)
@@ -27,16 +32,6 @@ function createArray2D<T>(w: number, h: number, feed: T | ((x: number, y: number
     return a;
 }
 
-
-function _createRow<T>(aRow: T[], pType: any = Array): Row<T> {
-    switch (pType) {
-        case Array:
-            return aRow;
-
-        default:
-            return new pType(aRow);
-    }
-}
 
 /**
  * Parcoure l'integralité du tableau 2D et appelle un callback dont le retour permet de modifier la valeur
@@ -55,11 +50,10 @@ function walk2D<T>(aArray2D: Array2D<T>, cb: (x: number, y: number, value: T) =>
 /**
  * comme walk2D mais créé un nouveau tableau
  * @param aArray2D
- * @param pType {ArrayConstructor} row type (default : Array, can be Uint8Array, Float32Array ...)
  * @param cb
  */
-function map2D<T, U>(aArray2D: T[][], cb: (x: number, y: number, value: T) => U, pType: any = Array): Row<U>[] {
-    return aArray2D.map((row, y) => _createRow(row.map((cell, x) => cb(x, y, cell))), pType);
+function map2D<T, U>(aArray2D: T[][], cb: (x: number, y: number, value: T) => U): U[][] {
+    return aArray2D.map((row, y) => row.map((cell, x) => cb(x, y, cell)));
 }
 
 function rotate<T>(aArray: Array2D<T>, bDirect: boolean = false): Array2D<T> {
@@ -69,7 +63,7 @@ function rotate<T>(aArray: Array2D<T>, bDirect: boolean = false): Array2D<T> {
     }
     return createArray2D(n, n, (x, y) => bDirect
         ? aArray[x][n - y - 1]
-        : aArray[n - x - 1][y], aArray[0].constructor
+        : aArray[n - x - 1][y], aArray[0].constructor as RowConstructor
     );
 }
 

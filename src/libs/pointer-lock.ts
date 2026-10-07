@@ -12,7 +12,21 @@
  * @date 2019-06-13
  */
 
-import Events from '@/libs/events';
+import Events, { type EventListener } from '@/libs/events';
+
+// vendor-prefixed (Firefox) members, absent from the DOM typings
+type MozElement = HTMLElement & {
+    mozRequestPointerLock?: () => void,
+    mozRequestPointerLockWithKeys?: () => void
+};
+type MozDocument = Document & {
+    mozExitPointerLock?: () => void,
+    mozPointerLockElement?: Element
+};
+type MozMouseEvent = MouseEvent & {
+    mozMovementX?: number,
+    mozMovementY?: number
+};
 
 class PointerLock {
     _events: Events;
@@ -43,7 +57,7 @@ class PointerLock {
         this.exitPointerLock();
     }
 
-    on(event: string, listener: (...args: any[]) => void) {
+    on(event: string, listener: EventListener): void {
         this._events.on(event, listener);
     }
 
@@ -103,12 +117,12 @@ class PointerLock {
             return;
         }
         this.oElement = oElement;
-        const el = oElement as any; // moz prefixed methods are not in the DOM typings
-        el.requestPointerLock = el.requestPointerLock || el.mozRequestPointerLockWithKeys || el.mozRequestPointerLock;
+        const el = oElement as MozElement;
+        const request: () => Promise<void> | void = el.requestPointerLock || el.mozRequestPointerLockWithKeys || el.mozRequestPointerLock;
         // recent browsers return a promise, which rejects when the request is refused
         // (e.g. clicking again too soon after leaving pointer lock with Escape) : this is reported as
         // a pointerlockerror event anyway, so the rejection is just swallowed here.
-        const p = el.requestPointerLock();
+        const p = request.call(el);
         if (p && typeof p.catch === 'function') {
             p.catch(() => {});
         }
@@ -121,8 +135,9 @@ class PointerLock {
         if (!this.locked()) {
             return;
         }
-        document.exitPointerLock = document.exitPointerLock || (document as any).mozExitPointerLock;
-        document.exitPointerLock();
+        const doc = document as MozDocument;
+        const exit = doc.exitPointerLock || doc.mozExitPointerLock;
+        exit.call(doc);
     }
 
     /**
@@ -142,7 +157,7 @@ class PointerLock {
      * @param event {Event}
      */
     eventChange(event: Event): void {
-        let oPointerLockElement = document.pointerLockElement || (document as any).mozPointerLockElement;
+        let oPointerLockElement = document.pointerLockElement || (document as MozDocument).mozPointerLockElement;
         if (oPointerLockElement) {
             this._handlers.mousemove = event => this.eventMouseMove(event);
             document.addEventListener('mousemove', this._handlers.mousemove, false);
@@ -171,8 +186,8 @@ class PointerLock {
      * @param event {MouseEvent}
      */
     eventMouseMove(event: MouseEvent): void {
-        const x = event.movementX || (event as any).mozMovementX || 0;
-        const y = event.movementY || (event as any).mozMovementY || 0;
+        const x = event.movementX || (event as MozMouseEvent).mozMovementX || 0;
+        const y = event.movementY || (event as MozMouseEvent).mozMovementY || 0;
         this.trigger('mousemove', {x, y});
     }
 }

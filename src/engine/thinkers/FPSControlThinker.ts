@@ -9,9 +9,18 @@ const ANGLE_INT_MAX_VALUE = 0.1;
 const SPEED = 6;
 const STRAFE_SPEED = 0.8;
 
+/**
+ * A player command (forward, use...) and the keys bound to it
+ */
+type Command = {
+    code: string[],
+    state: false | number, // false, or the time the key was pressed
+    latched: boolean // true when the key has been pressed since the command was last consumed
+};
+
 class FPSControlThinker extends TangibleThinker {
-    SPEED: any;
-    _commands: any;
+    SPEED: number;
+    _commands: Record<string, Command>;
     _easing: Easing;
     _frozen: boolean;
     _lastTime: number;
@@ -47,7 +56,7 @@ class FPSControlThinker extends TangibleThinker {
      * @param sCommand {string} name of command (formward, use ...)
      * @return {boolean} true = command is pushed
      */
-    isCommandOn(sCommand) {
+    isCommandOn(sCommand: string): boolean {
         return this._commands[sCommand].state !== false;
     }
 
@@ -55,7 +64,7 @@ class FPSControlThinker extends TangibleThinker {
      * clears command state. acknowledging command processed
      * @param sCommand {string} command name
      */
-    clearCommand(sCommand) {
+    clearCommand(sCommand: string): void {
         this._commands[sCommand].state = false;
         this._commands[sCommand].latched = false;
     }
@@ -67,18 +76,18 @@ class FPSControlThinker extends TangibleThinker {
      * @param sCommand {string} command name
      * @return {boolean}
      */
-    consumeCommand(sCommand) {
+    consumeCommand(sCommand: string): boolean {
         const c = this._commands[sCommand];
         const b = c.latched;
         c.latched = false;
         return b;
     }
 
-    setLookFactor(f) {
+    setLookFactor(f: number): void {
         this._lookFactor = f;
     }
 
-    setupCommands(oKeys, bReset = false) {
+    setupCommands(oKeys: Record<string, string | string[]>, bReset: boolean = false): void {
         if (bReset) {
             this._commands = {};
         }
@@ -91,7 +100,7 @@ class FPSControlThinker extends TangibleThinker {
         }
     }
 
-    set frozen(value) {
+    set frozen(value: boolean) {
         if (value === this._frozen) {
             return;
         }
@@ -107,11 +116,11 @@ class FPSControlThinker extends TangibleThinker {
         }
     }
 
-    get frozen () {
+    get frozen (): boolean {
         return this._frozen
     }
 
-    getKey(key) {
+    getKey(key: string): Command | null {
         const k = this._commands;
         for (let sKey in k) {
             const ik = k[sKey];
@@ -122,9 +131,9 @@ class FPSControlThinker extends TangibleThinker {
         return null;
     }
 
-    keyDown(key) {
+    keyDown(key: string): void {
         if (this._frozen) {
-            return null;
+            return;
         }
         const k = this.getKey(key);
         if (k !== null && k.state === false) {
@@ -133,9 +142,9 @@ class FPSControlThinker extends TangibleThinker {
         }
     }
 
-    keyUp(key) {
+    keyUp(key: string): void {
         if (this._frozen) {
-            return null;
+            return;
         }
         const k = this.getKey(key);
         if (k !== null) {
@@ -143,14 +152,14 @@ class FPSControlThinker extends TangibleThinker {
         }
     }
 
-    look(x) {
+    look(x: number): void {
         if (this._frozen) {
-            return null;
+            return;
         }
         this._lookAmount += x * this._lookFactor;
     }
 
-    computeAngleSpeed(nTime) {
+    computeAngleSpeed(nTime: number): number {
         if (nTime > ANGLE_INT_MAX_TIME) {
             return ANGLE_INT_MAX_VALUE;
         } else {
@@ -164,26 +173,26 @@ class FPSControlThinker extends TangibleThinker {
      * @param fSpeed {number}
      * @return {Vector}
      */
-    getVectorForward(fAngle, fSpeed) {
+    getVectorForward(fAngle: number, fSpeed: number): Vector {
         return new Vector(
             fSpeed * Math.cos(fAngle),
             fSpeed * Math.sin(fAngle)
         );
     }
 
-    getVectorBackward(fAngle, fSpeed) {
+    getVectorBackward(fAngle: number, fSpeed: number): Vector {
         return this.getVectorForward(fAngle + Math.PI, fSpeed);
     }
 
-    getVectorLeftward(fAngle, fSpeed) {
+    getVectorLeftward(fAngle: number, fSpeed: number): Vector {
         return this.getVectorForward(fAngle + Math.PI / 2, fSpeed);
     }
 
-    getVectorRightward(fAngle, fSpeed) {
+    getVectorRightward(fAngle: number, fSpeed: number): Vector {
         return this.getVectorForward(fAngle - Math.PI / 2, fSpeed);
     }
 
-    computeSpeedVector() {
+    computeSpeedVector(): void {
         const entity = this.entity;
         const engine = this.engine;
         const t = this._lastTime = engine.getTime();
@@ -288,10 +297,10 @@ class FPSControlThinker extends TangibleThinker {
 
     /**
      * Default behavior for pushing blocks
-     * @param x
-     * @param y
+     * @param x cell x
+     * @param y cell y
      */
-    useBlock(x, y) {
+    useBlock(x: number, y: number): void {
         this.engine.pushCell(this.entity, x, y);
     }
 
@@ -299,12 +308,12 @@ class FPSControlThinker extends TangibleThinker {
     ////// STATES ////// STATES ////// STATES ////// STATES ////// STATES ////// STATES ////// STATES //////
     ////// STATES ////// STATES ////// STATES ////// STATES ////// STATES ////// STATES ////// STATES //////
 
-    $init() {
+    $init(): void {
         super.$init();
         this.entity.dummy.tangibility.self = CONSTS.COLLISION_CHANNEL_CREATURE;
     }
 
-    $move() {
+    $move(): void {
         this.computeSpeedVector();
         super.$move();
     }

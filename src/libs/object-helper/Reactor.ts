@@ -65,12 +65,12 @@ class Reactor {
      * @param path {string}
      * @param oRoot {object} root object
      */
-    makeReactiveArrayMethod(arr: any[], sMethod: ArrayMutator, path: string, oRoot: object): void {
+    makeReactiveArrayMethod(arr: unknown[], sMethod: ArrayMutator, path: string, oRoot: object): void {
         const oSelf = this;
-        arr[sMethod] = ((...args: any[]) => {
+        (arr as unknown as Record<ArrayMutator, Function>)[sMethod] = (...args: unknown[]) => {
             oSelf.notify(path, oRoot);
             return (Array.prototype[sMethod] as Function).apply(arr, args);
-        }) as any;
+        };
     }
 
     /**

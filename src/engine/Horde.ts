@@ -2,6 +2,7 @@ import { SectorRegistry } from '@laboralphy/raycaster386/simulation';
 import Geometry from '@/libs/geometry';
 import { SPRITE_DIRECTION_COUNT } from './consts';
 import type Entity from './Entity';
+import type Engine from './Engine';
 
 /**
  * The entity collection.
@@ -91,7 +92,7 @@ class Horde {
         return this._entities;
     }
 
-    process(engine: any) {
+    process(engine: Engine) {
         const entities = this._entities;
         const sr = this._sectors;
         const ps = sr.getCellWidth();

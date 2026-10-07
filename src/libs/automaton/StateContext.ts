@@ -3,6 +3,11 @@ import Events from '@/libs/events';
 /**
  * A transition toward another state, taken when "test" passes (or unconditionally if there is no test)
  */
+/**
+ * Script parameters : the input string is split on spaces, numeric values are converted (see Automaton 'parse')
+ */
+export type ScriptParameters = (string | number)[];
+
 export type Transition = {
     test?: string,
     state?: string,
@@ -14,7 +19,7 @@ export type Transition = {
  * Actions and tests are script strings : "opcode param1 param2..."
  */
 export type StateDefinition = {
-    data?: object | ((sc: StateContext) => object),
+    data?: Record<string, unknown> | ((sc: StateContext) => Record<string, unknown>),
     init?: string | string[],
     loop?: string | string[],
     done?: string | string[],
@@ -26,7 +31,7 @@ export type StateDefinition = {
 class StateContext {
     _back: Transition[];
     _call: Transition[];
-    _data: any;
+    _data: Record<string, unknown>;
     _done: string[];
     _events: Events;
     _init: string[];
@@ -45,11 +50,11 @@ class StateContext {
         this._events = new Events
     }
 
-    get data () {
+    get data (): Record<string, unknown> {
         return this._data
     }
 
-    get events () {
+    get events (): Events {
         return this._events
     }
 
@@ -103,10 +108,10 @@ class StateContext {
         }
     }
 
-    parseScriptArguments (sInput: string): { opcode: string, parameters: any } {
+    parseScriptArguments (sInput: string): { opcode: string, parameters: ScriptParameters } {
         const r = sInput.match(/^\s*(\S+)\s*(.*)$/)
         if (r) {
-            const eventObject: { opcode: string, input: string, output: any } = {
+            const eventObject: { opcode: string, input: string, output: string | ScriptParameters } = {
                 opcode: r[1],
                 input: r[2],
                 output: r[2]
@@ -114,7 +119,8 @@ class StateContext {
             this._events.emit('parse', eventObject)
             return {
                 opcode: eventObject.opcode,
-                parameters: eventObject.output
+                // the 'parse' event listener is expected to split the input
+                parameters: typeof eventObject.output === 'string' ? [eventObject.output] : eventObject.output
             }
         } else {
             throw new Error('Parse Error: could not parse input string')

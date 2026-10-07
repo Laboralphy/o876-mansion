@@ -1,5 +1,9 @@
+import type { RceLevel } from '@laboralphy/raycaster386';
 import UI from '@/libs/ui';
-import Engine from '@/engine/Engine'
+import type Screen from '@/libs/ui/Screen';
+import Engine, { type BuildLevelExtra } from '@/engine/Engine'
+import type { ThinkerClass } from '@/engine/thinkers/Thinker';
+import type FPSControlThinker from '@/engine/thinkers/FPSControlThinker';
 import {fetchJSON} from "@/libs/fetch-json";
 import Extender from "@/libs/object-helper/Extender";
 import * as ENGINE_CONSTS from '@/engine/consts';
@@ -12,13 +16,34 @@ const FETCH_LEVEL_URL = './assets/levels/:name.json';
 const FETCH_DATA_URL = './assets/data/:name.json';
 const FETCH_LEVEL_LIST_URL = './levels';
 
+export interface GameOptions {
+    pointerlock: boolean;
+    autostretch: boolean;
+    surface: HTMLCanvasElement;
+    overlay: HTMLElement;
+    mouseSensitivity: number;
+    cameraThinker: string;
+    thinkers: Record<string, ThinkerClass>;
+    loadProgress: (phase: string, f: number) => void;
+    autoload: boolean;
+    fetchLevelAction: string;
+    fetchDataAction: string;
+    fetchLevelListAction: string;
+    firstLevel?: string;
+}
+
+/**
+ * Camera thinker methods that are invoked by the game input handlers
+ */
+type CameraThinkerFunction = 'look' | 'keyUp' | 'keyDown' | 'setLookFactor';
+
 class GameAbstract {
     _debug: boolean;
-    _engine: any;
-    _logGroups: any[];
-    _options: any;
+    _engine: Engine;
+    _logGroups: string[];
+    _options: GameOptions;
     _runCalled: boolean;
-    _screen: any;
+    _screen: Screen;
 
 
     constructor() {
@@ -37,10 +62,10 @@ class GameAbstract {
             autostretch: true,
 
             // the DOM surface element where the game will be rendered.
-            surface: document.querySelector('div.game canvas.screen'),
+            surface: document.querySelector<HTMLCanvasElement>('div.game canvas.screen'),
 
             // the DOM overlay element where the user interface can be displayed
-            overlay: document.querySelector('div.game div.overlay'),
+            overlay: document.querySelector<HTMLElement>('div.game div.overlay'),
 
             // the mouse sensitivity, lower this value to slow down visor rotation when the mouse is moved
             // this is only useful if "pointerlock" is also true
@@ -87,20 +112,20 @@ class GameAbstract {
 //             |___/        |_|
 
 
-    log(...args) {
+    log(...args: unknown[]): void {
         if (this._debug) {
             console.log('[g]', ...args);
         }
     }
 
-    logGroup(sGroup, ...args) {
+    logGroup(sGroup: string): void {
         if (this._debug) {
             console.group(sGroup);
             this._logGroups.push(sGroup);
         }
     }
 
-    logGroupEnd() {
+    logGroupEnd(): void {
         if (this._debug) {
             this._logGroups.pop();
             console.groupEnd();
@@ -118,15 +143,15 @@ class GameAbstract {
 //  \__, |\___|\__|\__\___|_|  |___/
 //  |___/
 
-    get screen() {
+    get screen(): Screen {
         return this._screen;
     }
 
-    get engine() {
+    get engine(): Engine {
         return this._engine;
     }
 
-    get options() {
+    get options(): GameOptions {
         return this._options;
     }
 
@@ -143,7 +168,7 @@ class GameAbstract {
      * Should be called once !
      * @return {GameAbstract}
      */
-    initScreen() {
+    initScreen(): this {
         this.log('init screen')
         const surface = this._options.surface;
         const overlay = this._options.overlay;
@@ -163,7 +188,7 @@ class GameAbstract {
      * engine initialisation
      * @return {GameAbstract}
      */
-    initEngine() {
+    initEngine(): this {
         this.log('init engine')
         const surface = this._screen.surface;       // getting the surface a.k.a the rendering canvas
         const engine = new Engine();             // create an engine instance
@@ -178,7 +203,7 @@ class GameAbstract {
     /**
      * handler initialisation
      */
-    initListeners() {
+    initListeners(): void {
         this.log('install event listeners')
         window.addEventListener('keydown', event => {
             this.keyDownHandler(event.key);
@@ -221,20 +246,20 @@ class GameAbstract {
         return !this._options.pointerlock || (!!this._screen && this._screen.pointerlock.locked());
     }
 
-    init() {
+    init(): void {
         this.log('init game');
         this.initScreen();
         this.initEngine();
         this.initListeners();
     }
 
-    initAsync() {
+    initAsync(): Promise<void> {
         this.log('async init game');
         return Promise.resolve();
     }
 
 
-    config(options) {
+    config(options: Partial<GameOptions>): void {
         if (this._runCalled) {
             throw new Error('you must config() BEFORE run(), not after.')
         }
@@ -249,28 +274,30 @@ class GameAbstract {
 // |_|\_\___|\__, |  \___| \_/ \___|_| |_|\__| |_| |_|\__,_|_| |_|\__,_|_|\___|_|  |___/
 //           |___/
 
-    keyUpHandler(key) {
+    keyUpHandler(key: string): void {
         this.invokeCameraThinkerFunction('keyUp', key);
     }
 
-    keyDownHandler(key) {
+    keyDownHandler(key: string): void {
         this.invokeCameraThinkerFunction('keyDown', key);
     }
 
-    invokeCameraThinkerFunction(sFunction, ...args) {
+    invokeCameraThinkerFunction<K extends CameraThinkerFunction>(sFunction: K, ...args: Parameters<FPSControlThinker[K]>): void {
         if (this._engine && this._engine.camera && this._engine.camera.thinker) {
-            const t = this._engine.camera.thinker;
-            if (typeof t[sFunction] === 'function') {
-                t[sFunction](...args);
+            // the camera thinker is usually a FPSControlThinker, but any thinker with these methods will do
+            const t = this._engine.camera.thinker as unknown as Partial<Record<K, (...a: unknown[]) => void>>;
+            const f = t[sFunction];
+            if (typeof f === 'function') {
+                f.apply(t, args);
             }
         }
     }
 
-    setMouseSensitivity(f) {
+    setMouseSensitivity(f: number): void {
         this.invokeCameraThinkerFunction('setLookFactor', f);
     }
 
-    progressFunction(phase, f) {
+    progressFunction(phase: string, f: number): void {
         const canvas = this.screen.surface;
         const context = canvas.getContext('2d');
         const LINEWIDTH = 6;
@@ -299,7 +326,7 @@ class GameAbstract {
      * Displays a message on a canvas, usually to notify an error during the initial phase of game construction.
      * @param sMessage {string};
      */
-    displayMessage(sMessage) {
+    displayMessage(sMessage: string): void {
         const canvas = this.screen.surface;
         const context = canvas.getContext('2d');
         const PADDING = 8;
@@ -317,11 +344,10 @@ class GameAbstract {
 
     /**
      * loads a level and starts the doomloop.
-     * @param data {object} level name
-     * @param extra {object} extra json data to be loaded as tilesets and blueprints
-     * @return {Promise<void>}
+     * @param data level data
+     * @param extra extra json data to be loaded as tilesets and blueprints
      */
-    async buildLevel(data, extra = {}) {
+    async buildLevel(data: RceLevel, extra: BuildLevelExtra = {}): Promise<void> {
         const engine = this._engine;
         this.log('building level');
         engine.stopDoomLoop();
@@ -335,7 +361,7 @@ class GameAbstract {
     /**
      * does something special (and synchronous) each time a level is loaded. activates pointerlock.
      */
-    enterLevel() {
+    enterLevel(): void {
         this.log('entering level');
         if (this._options.pointerlock) {
             this.setMouseSensitivity(this._options.mouseSensitivity);
@@ -343,19 +369,19 @@ class GameAbstract {
         }
     }
 
-    async run() {
+    async run(): Promise<void> {
         this.log('starting game engine');
         this._runCalled = true;
         this.init();
         await this.initAsync();
         if (this._options.autoload) {
-            const aLevels = await fetchJSON(this._options.fetchLevelListAction);
+            const aLevels = await fetchJSON<{ name: string, exported: boolean }[]>(this._options.fetchLevelListAction);
             const aExpLevels = aLevels.filter(level => level.exported);
             const level = aExpLevels.shift();
             if (!!level) {
                 try {
                     this.log('autoloading level', level.name);
-                    const oLevelData = await fetchJSON(this.options.fetchLevelAction.replace(/:name/, level.name))
+                    const oLevelData = await fetchJSON<RceLevel>(this.options.fetchLevelAction.replace(/:name/, level.name))
                     await this.buildLevel(oLevelData);
                     this.log('level', level.name, 'successfully loaded');
                 } catch (e) {

@@ -3,6 +3,7 @@ import * as CONSTS from "@/consts";
 import Automaton from "@/libs/automaton";
 import Geometry from '@/libs/geometry'
 import * as RC_CONSTS from '@/engine/consts'
+import LinearBoltThinker from "@/thinkers.d/LinearBoltThinker";
 
 const PULSE_MAP_LARGE = [4, 3, 2, 1, 2, 3, 2, 1, 0, 1, 2, 1, 0, 1, 0];
 
@@ -365,7 +366,7 @@ class VengefulThinker extends GhostThinker {
             : this.entity.data.missile
         const sMissileResRef = oMissileData.resref
         const missile = this.engine.createEntity(sMissileResRef, this.entity.position);
-        missile.thinker.fire(this.entity, oMissileData);
+        (missile.thinker as LinearBoltThinker).fire(this.entity, oMissileData);
     }
 
 

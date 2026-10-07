@@ -9,10 +9,10 @@ class StaticTangibleThinker extends TangibleThinker {
     ////// STATES ////// STATES ////// STATES ////// STATES ////// STATES ////// STATES ////// STATES //////
     ////// STATES ////// STATES ////// STATES ////// STATES ////// STATES ////// STATES ////// STATES //////
     ////// STATES ////// STATES ////// STATES ////// STATES ////// STATES ////// STATES ////// STATES //////
-    processForces() {
+    processForces(): void {
     }
 
-    $move() {
+    $move(): void {
     }
 }
 

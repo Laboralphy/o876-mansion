@@ -18,6 +18,8 @@ import ObjectExtender from "@/libs/object-helper/Extender";
 import AudioManager from "@/AudioManager";
 
 import THINKERS from '@/thinkers';
+import type PlayerThinker from '@/thinkers.d/PlayerThinker';
+import type GhostThinker from '@/thinkers.d/GhostThinker';
 import CanvasHelper from "@/libs/canvas-helper";
 import Album from "@/Album";
 import SenseMap from "@/SenseMap";
@@ -44,6 +46,13 @@ const {
     AUDIO_EVENT_AMBIANCE_LOOP,
     AUDIO_EVENT_AMBIANCE_TRIGGER
 } = CONSTS
+
+declare module '@/engine/thinkers/Thinker' {
+    // the context shared by all thinkers (see Engine.useThinkers)
+    interface ThinkerContext {
+        game: Game;
+    }
+}
 
 class Game extends GameAbstract {
     _activeGhosts: any[];
@@ -768,7 +777,7 @@ class Game extends GameAbstract {
             this.visor.depleteEnergy();
             const oCamera = this.player;
             oCamera.data.camera = true;
-            oCamera.thinker.setWalkingSpeed(CONSTS.PLAYER_CAMERA_SPEED);
+            this.playerThinker.setWalkingSpeed(CONSTS.PLAYER_CAMERA_SPEED);
             this._cameraFilter.show();
             this.syncCameraStore();
         }
@@ -780,7 +789,7 @@ class Game extends GameAbstract {
     dropCamera() {
         const oCamera = this.player;
         oCamera.data.camera = false;
-        oCamera.thinker.setWalkingSpeed(CONSTS.PLAYER_FULL_SPEED);
+        this.playerThinker.setWalkingSpeed(CONSTS.PLAYER_FULL_SPEED);
         this._cameraFilter.hide();
         this.visor.shutdownCameraIndicators();
         this.syncCameraStore();
@@ -839,14 +848,14 @@ class Game extends GameAbstract {
      * Freeze all player actions and movement
      */
     freezePlayer() {
-        this.player.thinker.frozen = true;
+        this.playerThinker.frozen = true;
     }
 
     /**
      * unfreeze player
      */
     thawPlayer() {
-        this.player.thinker.frozen = false;
+        this.playerThinker.frozen = false;
     }
 
     /**
@@ -854,11 +863,15 @@ class Game extends GameAbstract {
      * @return {boolean}
      */
     isPlayerFrozen() {
-        return this.player.thinker.frozen;
+        return this.playerThinker.frozen;
     }
 
     get player() {
         return this.engine.camera;
+    }
+
+    get playerThinker(): PlayerThinker {
+        return this.player.thinker as PlayerThinker;
     }
 
     /**
@@ -866,12 +879,11 @@ class Game extends GameAbstract {
      * applying wound on player
      * applying visual effect
      */
-    commitGhostAttack(oGhost, oTarget, nMultiplier) {
+    commitGhostAttack(oGhost, oTarget, nMultiplier: number = 1) {
         if (oTarget === this.player) {
             // get ghost power
             this.logic.damagePlayer(oGhost, nMultiplier);
-            const oThinker = this.player.thinker;
-            oThinker.ghostThreat(oGhost);
+            this.playerThinker.ghostThreat(oGhost);
             // filtre visuel
             const oFilter = new Timed({
                 child: new RedHaze(),
@@ -886,7 +898,7 @@ class Game extends GameAbstract {
     }
 
     gameOver () {
-        this.player.thinker.kill();
+        this.playerThinker.kill();
         this.freezePlayer();
         this._audioManager.generalFadeOutAndStop()
         this.engine.delayCommand(() => {
@@ -922,7 +934,7 @@ class Game extends GameAbstract {
             ? this.engine.createEntity(sRef, this.getLocator(xCell).position)
             : this.engine.createEntity(sRef, new Position(this.engine.getCellCenter(xCell, yCell)));
         this.registerActiveGhost(oGhost);
-        oGhost.thinker.target = this.player;
+        (oGhost.thinker as GhostThinker).target = this.player;
         oGhost.data.events = {
             death: null,
             attack: null,

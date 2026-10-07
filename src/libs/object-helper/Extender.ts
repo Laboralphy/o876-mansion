@@ -5,6 +5,8 @@
  * @returns {Array}
  */
 
+type Node = Record<string, unknown>;
+
 class Extender {
 
     static getType(x: unknown): string {
@@ -57,28 +59,28 @@ class Extender {
      * @param sBranch {string}
      * @returns {{node: *, key: string}}
      */
-    static objectReachBranch(oObj: object, sBranch: string): { node: any, key: string } {
+    static objectReachBranch(oObj: object, sBranch: string): { node: Node, key: string } {
         const aBranches = sBranch.split('.');
         const key = aBranches.pop();
-        const node = aBranches.reduce<any>((prev, next) => {
+        const node = aBranches.reduce<Node>((prev, next) => {
             if (next in prev) {
-                return prev[next];
+                return prev[next] as Node;
             } else {
                 throw new Error('this key : "' + next + '" does not exist in this object');
             }
-        }, oObj);
+        }, oObj as Node);
         return {node, key};
     }
 
     static objectMkBranch(oObj: object, sBranch: string): void {
         const aBranches = sBranch.split('.');
         aBranches.pop();
-        aBranches.reduce<any>((prev, next) => {
+        aBranches.reduce<Node>((prev, next) => {
             if (!(next in prev) || prev[next] === null || typeof prev[next] !== 'object') {
                 prev[next] = {};
             }
-            return prev[next];
-        }, oObj);
+            return prev[next] as Node;
+        }, oObj as Node);
     }
 
     /**
@@ -101,12 +103,12 @@ class Extender {
      * @param sBranch {string}
      * @return {*}
      */
-    static objectGet(oObj: object, sBranch: string): any {
+    static objectGet<T = unknown>(oObj: object, sBranch: string): T {
         if (oObj === undefined) {
             throw new Error('objectGet : undefined object')
         }
         const {node, key} = Extender.objectReachBranch(oObj, sBranch);
-        return node[key];
+        return node[key] as T;
     }
 
     /**

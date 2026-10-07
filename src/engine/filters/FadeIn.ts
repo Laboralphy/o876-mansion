@@ -22,7 +22,7 @@ class FadeIn extends Pulse {
     constructor({
         color = 'black',
         duration = 1000
-    }) {
+    }: { color?: string, duration?: number }) {
         super({
             from: 1,
             to: 0,

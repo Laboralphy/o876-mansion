@@ -1,11 +1,18 @@
-import type { ShadedTileSet } from '@laboralphy/raycaster386';
+import type { AnimLoop, ShadedTileSet } from '@laboralphy/raycaster386';
 
 export interface BlueprintAnimation {
     start: number | number[];
     length: number;
-    loop: number;
+    loop: AnimLoop;
     duration: number;
     iterations?: number;
+}
+
+/**
+ * An animation, as declared in a tileset definition
+ */
+export interface TilesetAnimation extends BlueprintAnimation {
+    id: string;
 }
 
 export interface BlueprintLightSource {
