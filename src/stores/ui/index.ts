@@ -3,6 +3,18 @@ import state from './state';
 import * as TYPES from './mutation-types';
 import * as ACTIONS from './action-types';
 import * as CONSTS from '@/consts';
+import { useAlbumStore } from '../album';
+import type { ValuePayload } from '../payloads';
+import type {
+    MainTab,
+    InventoryTab,
+    NoteType,
+    NoteEntryPayload,
+    PhotoDetailsPayload,
+    PopupPayload,
+    PopupMessage,
+    ShotPayload
+} from './types';
 
 let TIMEOUT_SHOT: ReturnType<typeof setTimeout> | null = null;
 
@@ -91,7 +103,7 @@ export const useUiStore = defineStore('ui', {
             this.popup.visible = true;
         },
 
-        [TYPES.PUSH_POPUP]({text, icon}) {
+        [TYPES.PUSH_POPUP]({text, icon}: PopupPayload) {
             const aWords = text.split(' ').filter(w => w.length > 1); // splits text into words
             const nWordCount = aWords.length; // number of words in the text
             const WPM = 180; // word read per minutes
@@ -101,15 +113,15 @@ export const useUiStore = defineStore('ui', {
             this.popup.queue.push({text, icon, time});
         },
 
-        [TYPES.SET_HUD_VISIBLE]({value}) {
+        [TYPES.SET_HUD_VISIBLE]({value}: ValuePayload<boolean>) {
             this.hud.visible = value;
         },
 
-        [TYPES.SET_UI_FRAME_VISIBLE]({value}) {
+        [TYPES.SET_UI_FRAME_VISIBLE]({value}: ValuePayload<boolean>) {
             this.uiframe.visible = value;
         },
 
-        [TYPES.SET_SHOT]({value, energy, distance, angle, targets, shutter, damage}) {
+        [TYPES.SET_SHOT]({value, energy, distance, angle, targets, shutter, damage = 0}: ShotPayload) {
             this.shot.visible = true;
             this.shot.shutter = shutter;
             this.shot.energy = energy;
@@ -124,25 +136,25 @@ export const useUiStore = defineStore('ui', {
             this.shot.visible = false;
         },
 
-        [TYPES.SET_UI_FULLY_VISIBLE]({value}) {
+        [TYPES.SET_UI_FULLY_VISIBLE]({value}: ValuePayload<boolean>) {
             this.uiframe.fullyVisible = value;
         },
 
-        [TYPES.SET_ALBUM_ACTIVE_TYPE]({value}) {
-            // the album active type belongs to the album store (see album SET_ACTIVE_TYPE)
-            // this former mutation targeted a non-existent "state.album", and is never committed.
-            (this as any).album = { ...(this as any).album, activeType: value };
+        [TYPES.SET_ALBUM_ACTIVE_TYPE]({value}: ValuePayload<string>) {
+            // the album active type belongs to the album store
+            // (the former Vuex mutation wrote into a non-existent "state.album")
+            useAlbumStore().SET_ACTIVE_TYPE({value});
         },
 
-        [TYPES.SET_MAIN_ACTIVE_TAB]({value}) {
+        [TYPES.SET_MAIN_ACTIVE_TAB]({value}: ValuePayload<MainTab>) {
             this.uiframe.activeTab = value;
         },
 
-        [TYPES.SET_ITEM_TYPE_ACTIVE_TYPE]({value}) {
+        [TYPES.SET_ITEM_TYPE_ACTIVE_TYPE]({value}: ValuePayload<InventoryTab>) {
             this.uiframe.activeInventoryTab = value;
         },
 
-        [TYPES.SET_PHOTO_DETAILS]({visible, title = '', content = '', description = '', value = 0}) {
+        [TYPES.SET_PHOTO_DETAILS]({visible, title = '', content = '', description = [], value = 0}: PhotoDetailsPayload) {
             const p = this.photodetails;
             p.visible = visible;
             p.title = title;
@@ -151,43 +163,43 @@ export const useUiStore = defineStore('ui', {
             p.value = value;
         },
 
-        [TYPES.SHOW_FIRST_PAGE]({value}) {
-            (this.mainmenu as any).visible = value;
+        [TYPES.SHOW_FIRST_PAGE]({value}: ValuePayload<boolean>) {
+            this.mainmenu.visible = value;
         },
 
-        [TYPES.SET_MAIN_MENU_PHASE]({value}) {
+        [TYPES.SET_MAIN_MENU_PHASE]({value}: ValuePayload<number>) {
             this.mainmenu.phase = value;
         },
 
-        [TYPES.SET_TODO_INNER_PHASE]({value}) {
+        [TYPES.SET_TODO_INNER_PHASE]({value}: ValuePayload<number>) {
             this.mainmenu.todo.innerPhase = value;
         },
 
-        [TYPES.SET_NOTE_SELECTED_TYPE]({value}) {
+        [TYPES.SET_NOTE_SELECTED_TYPE]({value}: ValuePayload<NoteType>) {
             this.uiframe.activeNoteTab = value;
         },
 
-        [TYPES.SET_GAME_OVER_PROMPT_VISIBLE]({value}) {
+        [TYPES.SET_GAME_OVER_PROMPT_VISIBLE]({value}: ValuePayload<boolean>) {
             this.gameoverprompt.visible = value;
         },
 
-        [TYPES.SET_END_OF_GAME_VISIBLE]({value}) {
+        [TYPES.SET_END_OF_GAME_VISIBLE]({value}: ValuePayload<boolean>) {
             this.endofgame.visible = value;
         },
 
-        [TYPES.SET_MOUSE_FACTOR]({value}) {
+        [TYPES.SET_MOUSE_FACTOR]({value}: ValuePayload<number>) {
             this.settings.mouseFactor = value;
         },
 
-        [TYPES.SET_MUSIC_VOLUME]({value}) {
+        [TYPES.SET_MUSIC_VOLUME]({value}: ValuePayload<number>) {
             this.settings.musicVolume = value;
         },
 
-        [TYPES.SET_SFX_VOLUME]({value}) {
+        [TYPES.SET_SFX_VOLUME]({value}: ValuePayload<number>) {
             this.settings.sfxVolume = value;
         },
 
-        [TYPES.ADD_NOTE_ENTRY]({ref, type}) {
+        [TYPES.ADD_NOTE_ENTRY]({ref, type}: NoteEntryPayload) {
             this.notes.push({
                 ref,
                 type,
@@ -200,11 +212,11 @@ export const useUiStore = defineStore('ui', {
         // former actions
         // ------------------------------------------------------------------
 
-        [ACTIONS.SHOW_POPUP]({text, icon}) {
+        [ACTIONS.SHOW_POPUP]({text, icon}: PopupPayload) {
             // is this text worth being displayed ?
             const aList = this.getPopupQueue;
             const oPopup = this.getPopup;
-            const isAlreadyInList = aList.some(p => p.text === text && p.icon === icon);
+            const isAlreadyInList = aList.some((p: PopupMessage) => p.text === text && p.icon === icon);
             const isAlreadyDisplayed = oPopup.visible && oPopup.text === text && oPopup.icon === icon;
             const bWorthIt = !isAlreadyInList && !isAlreadyDisplayed;
 
@@ -249,7 +261,7 @@ export const useUiStore = defineStore('ui', {
             }
         },
 
-        [ACTIONS.SET_SHOT](payload) {
+        [ACTIONS.SET_SHOT](payload: ShotPayload) {
             if (TIMEOUT_SHOT) {
                 // Scores are being displayed currently
                 clearTimeout(TIMEOUT_SHOT); // cancel previous time out

@@ -1,6 +1,10 @@
 import { LightMap, type LightSource } from '@laboralphy/raycaster386';
 import * as CONSTS from '@/consts';
 
+export interface SenseMapState {
+    removed: string[]; // references of the senses removed so far
+}
+
 /**
  * The sense map is a light map where light sources are "supernatural presences".
  * The player can sense these presences when standing near them.
@@ -73,13 +77,13 @@ class SenseMap {
         return this._grid[yg * n + xg] || 0;
     }
 
-    get state() {
+    get state(): SenseMapState {
         return {
             removed: [...this._removed]
         };
     }
 
-    set state(value) {
+    set state(value: SenseMapState) {
         value.removed.forEach(v => this.removeSense(v));
     }
 }

@@ -1,5 +1,15 @@
+import type { RceBlueprint } from '@laboralphy/raycaster386';
+import type { GhostEntry } from '@/data/types';
+
+/**
+ * Builds blueprints out of wraith and ghost definitions
+ * (not used : Game.getCompiledBlueprints does this job)
+ */
 class DataBuilder {
-    static buildWraithBlueprints(aWraiths) {
+    /**
+     * @param aWraiths wraith ids (the id is also the tileset id)
+     */
+    static buildWraithBlueprints(aWraiths: string[]): RceBlueprint[] {
         return aWraiths.map(w => ({
             "id": w,
             "ref": w,
@@ -14,7 +24,11 @@ class DataBuilder {
         }))
     }
 
-    static buildGhostBlueprints(aGhosts, data) {
+    /**
+     * @param aGhosts ids of the ghosts to build
+     * @param data all the ghost definitions
+     */
+    static buildGhostBlueprints(aGhosts: string[], data: GhostEntry[]): RceBlueprint[] {
         return aGhosts
             .map(id => {
                 return data.find(d => d.id == id);

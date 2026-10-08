@@ -45,7 +45,7 @@ export default defineComponent({
             get: function() {
                 return this.getMainMenuPhase;
             },
-            set: function(value) {
+            set: function(value: number) {
                 this.setPhase({value})
             }
         }

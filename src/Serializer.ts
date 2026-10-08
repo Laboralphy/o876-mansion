@@ -1,36 +1,52 @@
+import type Game from '@/Game';
+import type { DoorManagerStateEntry } from '@laboralphy/raycaster386/simulation';
+import type {
+    AlbumLogicState,
+    DecalMutation,
+    PlayerState,
+    SerializedLevelState
+} from '@/types';
+
 const SERIAL_VERSION = 1;
 
 class Serializer {
 
-    static censor(key, value) {
+    /**
+     * JSON.stringify replacer : Infinity is not valid json
+     */
+    static censor(key: string, value: unknown): unknown {
         return value === Infinity  ? "Infinity" : value;
     }
 
-    static uncensor(key, value) {
+    /**
+     * JSON.parse reviver, see censor()
+     */
+    static uncensor(key: string, value: unknown): unknown {
         return value === "Infinity"  ? Infinity : value;
     }
 
     /**
      * Door phases. The door policy (@laboralphy/raycaster386/simulation) serializes its contexts itself
      */
-    static getDoorManagerState(g) {
+    static getDoorManagerState(g: Game): DoorManagerStateEntry[] {
         return g.engine.getDoorManagerState();
     }
 
-    static setDoorManagerState(g, state) {
+    static setDoorManagerState(g: Game, state: DoorManagerStateEntry[]) {
         g.engine.setDoorManagerState(state);
     }
 
 
-    static getDecalState(g) {
+    static getDecalState(g: Game): DecalMutation[] {
         return g._mutations.decals.slice(0);
     }
 
     /**
      * This function should only be used right after loading level.
-     * @param state
+     * @param g
+     * @param state decal mutations to replay
      */
-    static setDecalState(g, state) {
+    static setDecalState(g: Game, state: DecalMutation[]) {
         g._mutations.decals = [];
         state.forEach(data => {
             switch (data.op) {
@@ -43,21 +59,18 @@ class Serializer {
                     break;
 
                 case 'app':
-                    g.applyDecal(data.x, data.y, data.side, data.ref);
+                    g.applyDecal(data.x, data.y, data.sides, data.ref);
                     break;
             }
         });
     }
 
-    static getPlayerState(g) {
-        const oState: any = {};
-        oState.x = g.player.position.x;
-        oState.y = g.player.position.y;
-        oState.angle = g.player.position.angle;
-        return oState;
+    static getPlayerState(g: Game): PlayerState {
+        const {x, y, angle} = g.player.position;
+        return {x, y, angle};
     }
 
-    static setPlayerState(g, state) {
+    static setPlayerState(g: Game, state: PlayerState) {
         g.player.position.set({
             x: state.x,
             y: state.y,
@@ -65,9 +78,9 @@ class Serializer {
         });
     }
 
-    static saveLevelState(g) {
+    static saveLevelState(g: Game): string {
         const engine = g.engine;
-        const oState = {
+        const oState: SerializedLevelState = {
             version: SERIAL_VERSION,
             type: 'level',
             level: g._mutations.level,
@@ -82,8 +95,12 @@ class Serializer {
         return JSON.stringify(oState, Serializer.censor);
     }
 
-    static async restoreLevelState(g, state) {
-        const oState = JSON.parse(state, Serializer.uncensor);
+    /**
+     * @param g
+     * @param state a state produced by saveLevelState
+     */
+    static async restoreLevelState(g: Game, state: string) {
+        const oState: SerializedLevelState = JSON.parse(state, Serializer.uncensor);
         if (oState.version !== SERIAL_VERSION) {
             throw new Error('unexpected version number while restoring game state - expected v' + SERIAL_VERSION + ' - got v' + oState.version);
         }
@@ -104,12 +121,12 @@ class Serializer {
         // g.album.commit('SET_STATE_CONTENT', {content: oState.album});
     }
 
-    static restoreAlbumLogicState(g, oState) {
+    static restoreAlbumLogicState(g: Game, oState: AlbumLogicState) {
         g.logic.commit('SET_STATE_CONTENT', {content: oState.logic});
         g.album.commit('SET_STATE_CONTENT', {content: oState.album});
     }
 
-    static saveAlbumLogicState(g) {
+    static saveAlbumLogicState(g: Game): AlbumLogicState {
         return {
             logic: g.logic.prop('getStateContent'),
             album: g.album.prop('getStateContent')

@@ -1,9 +1,12 @@
 import * as MUTATIONS from '@/stores/logic/mutation-types';
 import * as ACTIONS from '@/stores/logic/action-types';
 import StoreAbstract from "@/StoreAbstract";
+import type { Pinia } from 'pinia';
+import type Entity from '@/engine/Entity';
+import type { ItemData, InventoryEntry } from '@/stores/logic/types';
 
-class Logic extends StoreAbstract {
-    constructor(store) {
+class Logic extends StoreAbstract<'logic'> {
+    constructor(store: Pinia) {
         super('logic');
         this.store = store;
     }
@@ -17,10 +20,9 @@ class Logic extends StoreAbstract {
 
     /**
      * Return data about an item
-     * @param ref {string} item reference
-     * @return {*}
+     * @param ref item reference
      */
-    getItemData(ref) {
+    getItemData(ref: string): ItemData {
         const items = this.prop('getItemData');
         const item = items.find(x => x.id === ref);
         if (!item) {
@@ -31,41 +33,47 @@ class Logic extends StoreAbstract {
 
     /**
      * Adds a quest items into player inventory
-     * @param ref {string}
+     * @param ref item reference
      */
-    addInventoryItem(ref) {
+    addInventoryItem(ref: string) {
         this.commit(MUTATIONS.ADD_INVENTORY_ITEM, {ref});
     }
 
     /**
      * Removes a quest items from player inventory
-     * @param ref {string}
+     * @param ref item reference
      */
-    removeInventoryItem(ref) {
+    removeInventoryItem(ref: string) {
         this.commit(MUTATIONS.REMOVE_INVENTORY_ITEM, {ref});
     }
 
     /**
      * Tests if player possess a defined quest items
-     * @param ref {string}
+     * @param ref item reference
+     * @return the inventory entry (truthy) if the player owns the item, undefined otherwise
      */
-    hasInventoryItem(ref) {
+    hasInventoryItem(ref: string): InventoryEntry | undefined {
         return this
             .prop('getInventoryItems')
             .find(({ item }) => ref === item);
     }
 
-    damagePlayer(ghost, nMultiplier = 1) {
+    /**
+     * The player is hurt by a ghost
+     * @param ghost the ghost entity, whose data.power is the base damage
+     * @param nMultiplier damage multiplier
+     */
+    damagePlayer(ghost: Entity, nMultiplier = 1) {
         const nPower = ghost.data.power;
         const nDamage = Math.floor(nPower * nMultiplier);
         this.commit(MUTATIONS.MODIFY_PLAYER_HP, {value: -nDamage});
     }
 
-    isPlayerDead() {
+    isPlayerDead(): boolean {
         return this.prop('isPlayerDead');
     }
 
-    incScore(value) {
+    incScore(value: number) {
         return this.commit(MUTATIONS.INC_SCORE, {value})
     }
 }

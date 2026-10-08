@@ -2,6 +2,8 @@
  * Game data registry.
  * Statically imports every json file (formerly gathered at build time by webpack's require.context)
  */
+import type { RceBlueprint, RceTileset, GhostData } from './types';
+import type { ItemData } from '@/stores/logic/types';
 import blueprints_o_flame from './blueprints/o_flame.json';
 import blueprints_o_flare from './blueprints/o_flare.json';
 import blueprints_p_ghost_magbolt from './blueprints/p_ghost_magbolt.json';
@@ -40,7 +42,7 @@ import items_itm_camera from './items/itm_camera.json';
 import items_key_cabin from './items/key_cabin.json';
 import items_note_m1_ritual_notes from './items/note_m1_ritual_notes.json';
 
-const RAW_BLUEPRINTS: Record<string, any> = {
+const RAW_BLUEPRINTS: Record<string, object> = {
     o_flame: blueprints_o_flame,
     o_flare: blueprints_o_flare,
     p_ghost_magbolt: blueprints_p_ghost_magbolt,
@@ -56,7 +58,7 @@ const RAW_BLUEPRINTS: Record<string, any> = {
     w_watching_cultist: blueprints_w_watching_cultist
 };
 
-const RAW_TILESETS: Record<string, any> = {
+const RAW_TILESETS: Record<string, object> = {
     g_angry_girl: tilesets_g_angry_girl,
     g_banshee: tilesets_g_banshee,
     g_bashed_boy: tilesets_g_bashed_boy,
@@ -74,7 +76,7 @@ const RAW_TILESETS: Record<string, any> = {
     w_watching_cultist: tilesets_w_watching_cultist
 };
 
-const RAW_GHOSTS: Record<string, any> = {
+const RAW_GHOSTS: Record<string, object> = {
     g_angry_girl_0: ghosts_g_angry_girl_0,
     g_banshee_0: ghosts_g_banshee_0,
     g_bashed_boy_0: ghosts_g_bashed_boy_0,
@@ -82,28 +84,33 @@ const RAW_GHOSTS: Record<string, any> = {
     g_test_2: ghosts_g_test_2
 };
 
-const RAW_ITEMS: Record<string, any> = {
+const RAW_ITEMS: Record<string, object> = {
     book_glyphs: items_book_glyphs,
     itm_camera: items_itm_camera,
     key_cabin: items_key_cabin,
     note_m1_ritual_notes: items_note_m1_ritual_notes
 };
 
-function makeArrayFromObject (oObject: Record<string, any>): any[] {
-    const aArray: any[] = [];
+/**
+ * Turns a collection of json definitions, indexed by id (the file name), into an array of definitions
+ * having an "id" property.
+ * The json files are not validated : their shape is trusted to be T.
+ */
+function makeArrayFromObject<T extends { id: string | number }>(oObject: Record<string, object>): T[] {
+    const aArray: T[] = [];
     for (const [id, value] of Object.entries(oObject)) {
         aArray.push({
             id,
             ...value
-        });
+        } as T);
     }
     return aArray;
 }
 
-const BLUEPRINTS = makeArrayFromObject(RAW_BLUEPRINTS);
-const TILESETS = makeArrayFromObject(RAW_TILESETS);
-const GHOSTS = RAW_GHOSTS;
-const ITEMS = makeArrayFromObject(RAW_ITEMS);
+const BLUEPRINTS = makeArrayFromObject<RceBlueprint>(RAW_BLUEPRINTS);
+const TILESETS = makeArrayFromObject<RceTileset>(RAW_TILESETS);
+const GHOSTS = RAW_GHOSTS as Record<string, GhostData>;
+const ITEMS = makeArrayFromObject<ItemData>(RAW_ITEMS);
 
 export default {
     BLUEPRINTS,

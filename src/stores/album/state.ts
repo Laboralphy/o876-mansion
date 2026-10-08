@@ -1,9 +1,11 @@
+import type { Photo, PhotoType } from './types';
+
 /**
  * initial state factory
  */
 export default () => ({
     photoId: 1,
-    activeType: 'debug',
+    activeType: 'debug' as PhotoType,
     photoTypes: [
         'debug',
         'art',
@@ -11,6 +13,6 @@ export default () => ({
         'archive',
         'wraith',
         'ambient'
-    ],
-    photos: [] // {id: '', image: '...', type: x, value: x, }
+    ] as PhotoType[],
+    photos: [] as Photo[]
 });

@@ -1,3 +1,5 @@
+import type { MainTab, InventoryTab, NoteType, Note, PopupMessage } from './types';
+
 /**
  * initial state factory
  */
@@ -7,7 +9,7 @@ export default () => ({
         icon: '',
         time: 0,
         visible: false,
-        queue: []
+        queue: [] as PopupMessage[]
     },
 
     hud: {
@@ -25,9 +27,9 @@ export default () => ({
     uiframe: {
         visible: false,
         fullyVisible: false,
-        activeTab: 'album',
-        activeInventoryTab: 'all',
-        activeNoteTab: 'journal'
+        activeTab: 'album' as MainTab,
+        activeInventoryTab: 'all' as InventoryTab,
+        activeNoteTab: 'journal' as NoteType
     },
 
     shot: { // information sur le dernier tir
@@ -50,6 +52,7 @@ export default () => ({
     },
 
     mainmenu: {
+        visible: true, // see SHOW_FIRST_PAGE, not read by the components (they use the phase)
         phase: 0,
         phases: {
             init: 0,
@@ -65,7 +68,7 @@ export default () => ({
         }
     },
 
-    notes: [
+    notes: <Note[]>[
         {
             ref: "story_so_far",
             type: 'journal',

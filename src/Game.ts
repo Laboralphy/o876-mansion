@@ -27,6 +27,24 @@ import SenseMap from "@/SenseMap";
 import DATA from '@/data';
 import GameOver from '@/filters/GameOver'
 import Serializer from "@/Serializer";
+import type Entity from '@/engine/Entity';
+import type { BuildLevelExtra } from '@/engine/Engine';
+import type VengefulThinker from '@/thinkers.d/VengefulThinker';
+import type { GhostScore } from '@/Visor';
+import type { GhostData, RceBlueprint } from '@/data/types';
+import type { PhotoType } from '@/stores/album/types';
+import type { ShotPayload } from '@/stores/ui/types';
+import type {
+    AlbumLogicState,
+    DecalMutation,
+    EntityEventName,
+    LevelMutations,
+    LevelState,
+    Locator,
+    PhotoTag,
+    SoundEventParams,
+    TagEntry
+} from '@/types';
 
 const {
     AUDIO_EVENT_CAMERA_SHOOT,
@@ -55,19 +73,19 @@ declare module '@/engine/thinkers/Thinker' {
 }
 
 class Game extends GameAbstract {
-    _activeGhosts: any[];
+    _activeGhosts: Entity[];
     _album: Album;
     _audioManager: AudioManager;
     _cameraFilter: CameraObscura;
-    _capturableEntities: any;
-    _compiledBlueprints: any;
+    _capturableEntities: GhostScore[];
+    _compiledBlueprints: RceBlueprint[] | null;
     _debug: boolean;
     _ghostScream: GhostScreamer;
     _haloBlack: Halo;
-    _levelStates: any;
-    _locators: any;
+    _levelStates: Record<string, LevelState>;
+    _locators: Record<string, Locator>;
     _logic: Logic;
-    _mutations: any;
+    _mutations: LevelMutations;
     _senseMap: SenseMap;
     _ui: UI;
     _visor: Visor;
@@ -102,7 +120,7 @@ class Game extends GameAbstract {
         this._ghostScream = new GhostScreamer();
         this.engine.filters.link(this._ghostScream);
         this._senseMap = new SenseMap();
-        this._capturableEntities = null;
+        this._capturableEntities = [];
         this._audioManager = new AudioManager()
         this._mutations = {
             decals: [],
@@ -140,7 +158,7 @@ class Game extends GameAbstract {
         )
     }
 
-    get state () {
+    get state (): { level: string, player: AlbumLogicState } {
         const save = {
             level: Serializer.saveLevelState(this),
             player: Serializer.saveAlbumLogicState(this)
@@ -158,8 +176,13 @@ class Game extends GameAbstract {
         this.ui.commit('SET_MAIN_MENU_PHASE', { value: 1 })
     }
 
-    getOneGhostData(oData, sGhostId) {
-        let gi = {
+    /**
+     * Returns a ghost definition, its "extends" chain being resolved
+     * @param oData all ghost definitions
+     * @param sGhostId ghost id
+     */
+    getOneGhostData(oData: Record<string, GhostData>, sGhostId: string): GhostData {
+        let gi: GhostData = {
             ...oData[sGhostId]
         }
         if ('extends' in gi) {
@@ -169,37 +192,43 @@ class Game extends GameAbstract {
         return gi
     }
 
-    getCompiledBlueprints() {
+    /**
+     * Returns all the blueprints : the common ones (data/blueprints) and one blueprint per ghost (data/ghosts)
+     * (computed once)
+     */
+    getCompiledBlueprints(): RceBlueprint[] {
         if (this._compiledBlueprints) {
             return this._compiledBlueprints;
         }
-        const bp = DATA.BLUEPRINTS
+        // DATA is left untouched : the former version turned DATA.GHOSTS entries into blueprints in place
+        // and pushed them into DATA.BLUEPRINTS, so a ghost extending an already patched ghost
+        // inherited its blueprint properties (id, fx, size...) into its data.
         const oGhosts = DATA.GHOSTS;
-        // patch blueprints
-        Object.entries(oGhosts).forEach(([id, g]) => {
-            let gi = this.getOneGhostData(oGhosts, id)
-            g.id = id
-            g.ref = id
-            g.tileset = gi.tileset
-            g.thinker = gi.thinker
-            g.scale = 3
-            g.size = 24
-            g.fx = ["@FX_LIGHT_ADD", "@FX_LIGHT_SOURCE"]
-            g.data = { ...gi, type: 'v' }
-            delete g.data.thinker
-            bp.push(g)
+        const aGhostBlueprints = Object.keys(oGhosts).map((id): RceBlueprint => {
+            const gi = this.getOneGhostData(oGhosts, id)
+            const { thinker, ...data } = gi
+            return {
+                id,
+                ref: id,
+                tileset: gi.tileset,
+                thinker,
+                scale: 3,
+                size: 24,
+                fx: ["@FX_LIGHT_ADD", "@FX_LIGHT_SOURCE"],
+                data: { ...data, type: 'v' }
+            }
         })
+        const bp = [...DATA.BLUEPRINTS, ...aGhostBlueprints];
         this._compiledBlueprints = bp;
         return bp;
     }
 
     /**
      * @override
-     * @param sLevel {string}
-     * @param extra
-     * @returns {Promise<void>}
+     * @param sLevel level name (assets/levels/<name>.json)
+     * @param extra start point ; tilesets and blueprints are added here
      */
-    async loadLevel(sLevel, extra: any = {}) {
+    async loadLevel(sLevel: string, extra: BuildLevelExtra = {}) {
         // Stop all sound
         this._audioManager.stop()
         // save current level state
@@ -234,7 +263,7 @@ class Game extends GameAbstract {
 //  \__,_|\___|\___\__,_|_|___/  \___/| .__/ \___|_|  \__,_|\__|_|\___/|_| |_|___/
 //                                    |_|
 
-    setDecalState(value) {
+    setDecalState(value: DecalMutation[]) {
         value.forEach(mut => {
            switch (mut.op) {
                case 'del':
@@ -252,17 +281,17 @@ class Game extends GameAbstract {
         });
     }
 
-    getDecalState() {
+    getDecalState(): DecalMutation[] {
         return this._mutations.decals;
     }
 
     /**
      * Remove all decals from a block
-     * @param x {number} block cell coordinate (x axis)
-     * @param y {number} block cell coordinate (y axis)
-     * @param nSides {number} bit mask of affected sides
+     * @param x block cell coordinate (x axis)
+     * @param y block cell coordinate (y axis)
+     * @param nSides bit mask of affected sides
      */
-    removeDecals(x, y, nSides = 0xF) {
+    removeDecals(x: number, y: number, nSides = 0xF) {
         this._mutations.decals.push({op: 'del', x, y, sides: nSides});
         for (let i = 0; i < 4; ++i) {
             if ((nSides & (1 << i)) !== 0) {
@@ -273,23 +302,23 @@ class Game extends GameAbstract {
 
     /**
      * Rotates all decals on a block
-     * @param x {number} block cell coordinate (x axis)
-     * @param y {number} block cell coordinate (y axis)
-     * @param bClockWise {boolean} true = clock wise ; false = counter clock wise (default)
+     * @param x block cell coordinate (x axis)
+     * @param y block cell coordinate (y axis)
+     * @param bClockWise true = clock wise ; false = counter clock wise
      */
-    rotateDecals(x, y, bClockWise) {
+    rotateDecals(x: number, y: number, bClockWise: boolean) {
         this._mutations.decals.push({op: 'rot', x, y, cw: bClockWise});
         this.engine.rotateDecals(x, y, bClockWise);
     }
 
     /**
      * Applies a decal on a surface
-     * @param x
-     * @param y
-     * @param nSides
-     * @param sRef
+     * @param x block cell coordinate (x axis)
+     * @param y block cell coordinate (y axis)
+     * @param nSides bit mask of affected sides
+     * @param sRef tileset reference
      */
-    applyDecal(x, y, nSides, sRef) {
+    applyDecal(x: number, y: number, nSides: number, sRef: string) {
         this._mutations.decals.push({op: 'app', x, y, sides: nSides, ref: sRef});
         const oDecal = this.engine.getTileSet(sRef);
         for (let i = 0; i < 4; ++i) {
@@ -313,7 +342,7 @@ class Game extends GameAbstract {
      * @param x
      * @param y
      */
-    removeSprite (x, y) {
+    removeSprite (x: number, y: number) {
 
     }
 
@@ -422,7 +451,7 @@ class Game extends GameAbstract {
         });
     }
 
-    engineEntityDestroyedHandler(entity) {
+    engineEntityDestroyedHandler(entity: Entity) {
         const sType = entity.data.type;
         if (sType === 'w' || sType === 'v') {
             this.unregisterActiveGhost(entity)
@@ -430,14 +459,20 @@ class Game extends GameAbstract {
         this.triggerEntityEvent(entity, 'death');
     }
 
-    engineOptionChanged(key, value) {
+    engineOptionChanged(key: string, value: number) {
         switch (key) {
             case 'screen.width':
                 this.visor.updateCameraWidth(value);
         }
     }
 
-    triggerEntityEvent(entity, sEvent, ...args) {
+    /**
+     * Runs the script attached to an entity event (see EntityEvents)
+     * @param entity a ghost
+     * @param sEvent event name
+     * @param args additional script parameters
+     */
+    triggerEntityEvent(entity: Entity, sEvent: EntityEventName, ...args: unknown[]) {
         const oEvents = entity.data.events;
         if ((typeof oEvents === 'object') && (sEvent in oEvents)) {
             this.runScript(oEvents[sEvent], entity, ...args);
@@ -460,7 +495,13 @@ class Game extends GameAbstract {
 // \__ \ (__| |  | | |_) | |_\__ \
 // |___/\___|_|  |_| .__/ \__|___/
 //                 |_|
-    runScript(sName, ...params) {
+    /**
+     * Runs a script of the scripts.d folder
+     * @param sName script path, e.g. 'tag.lock.init' (folder.file.function) or 'event.m0_red_sigil_unlock'
+     * (folder.file : the "main" function is called)
+     * @param params script parameters (the game instance is always the first one)
+     */
+    runScript(sName: string, ...params: unknown[]): unknown {
         let script = null;
         try {
             script = ObjectExtender.objectGet(Scripts, sName);
@@ -476,7 +517,7 @@ class Game extends GameAbstract {
         // throw new ReferenceError('Unable to run script : "' + sName + '". No published function.');
     }
 
-    registerActiveGhost(oGhost) {
+    registerActiveGhost(oGhost: Entity) {
         const bInitiallyNoGhost = this.getVengefulGhostCount() === 0
         this._activeGhosts.push(oGhost)
         if (this.getVengefulGhostCount() > 0 && bInitiallyNoGhost) {
@@ -484,7 +525,7 @@ class Game extends GameAbstract {
         }
     }
 
-    unregisterActiveGhost(oGhost) {
+    unregisterActiveGhost(oGhost: Entity) {
         const bInitiallyHasGhost = this.getVengefulGhostCount() > 0
         const i = this._activeGhosts.indexOf(oGhost);
         if (i >= 0) {
@@ -510,7 +551,7 @@ class Game extends GameAbstract {
         this.engine.filters.link(new FadeIn({duration: 600}));
     }
 
-    keyDownHandler(key) {
+    keyDownHandler(key: string) {
         super.keyDownHandler(key);
         this.runScript('key.' + key.toLowerCase() + '.keydown');
     }
@@ -537,10 +578,10 @@ class Game extends GameAbstract {
     /**
      * Renvoie la référence du tag photo de la cellule actuellemenbt visée en mode photo
      */
-    getAimedCellPhotoTags() {
+    getAimedCellPhotoTags(): PhotoTag[] | null {
         const engine = this.engine;
         const oAimedCell = engine.raycaster.aimedCell;
-        let aPhotos = null;
+        let aPhotos: PhotoTag[] | null = null;
         if (('xCell' in oAimedCell) && ('yCell' in oAimedCell)) {
             const p = engine.camera.position;
             const d = Index.distance(p.x, p.y, oAimedCell.x, oAimedCell.y);
@@ -595,7 +636,7 @@ class Game extends GameAbstract {
             const {precision, proximity} = e[0];
             fLightCE = (proximity + precision) / 2;
             // checks shutters chances
-            bShutterChance = ce.some(({ entity }) => entity.data.type === "v" && entity.thinker.shutterChance);
+            bShutterChance = ce.some(({ entity }) => entity.data.type === "v" && (entity.thinker as VengefulThinker).shutterChance);
         }
         // allumer le filament en précence de fantome
         const cf = this._cameraFilter;
@@ -621,20 +662,20 @@ class Game extends GameAbstract {
 
     /**
      * stockage d'une photo d'indice
-     * @param type
-     * @param value
-     * @param ref
-     * @param oPosition
-     * @return {HTMLCanvasElement}
+     * @param type album category
+     * @param value score
+     * @param ref translation reference (photos namespace)
+     * @param oPosition point of view of the photo (player position by default)
+     * @return the photo
      */
-    storePhoto(type, value, ref, oPosition = null) {
+    storePhoto(type: PhotoType, value: number, ref: string, oPosition: Position | null = null): HTMLCanvasElement {
         const oPhoto = this.capture(oPosition);
         this.album.storePhoto(oPhoto.toDataURL('image/webp', 0.85), type, value, ref);
         this.ui.displayPhotoScore(value);
         return oPhoto;
     }
 
-    hasRecentlyShot() {
+    hasRecentlyShot(): boolean {
         const nLastTime = this.visor.lastShotTime;
         const nThisTime = this.engine.getTime();
         return ((nThisTime - nLastTime) < CONSTS.CAMERA_RETRIGGER_DELAY)
@@ -683,7 +724,7 @@ class Game extends GameAbstract {
             .map(entity => this.visor.getGhostScore(entity));
     }
 
-    get capturableEntities() {
+    get capturableEntities(): GhostScore[] {
         return this._capturableEntities;
     }
 
@@ -697,7 +738,7 @@ class Game extends GameAbstract {
      */
     processCapturedEntities() {
         // checks if ghost or wraith are in visibility
-        const oGhostDetails = {
+        const oGhostDetails: ShotPayload = {
             value: 0,
             energy: this.visor.energy,
             distance: Infinity,
@@ -722,7 +763,7 @@ class Game extends GameAbstract {
                         oGhostDetails.value += Math.round(entity.data.score * value);
                         oGhostDetails.distance = Math.min(oGhostDetails.distance, distance);
                         oGhostDetails.angle = Math.min(oGhostDetails.angle, precision);
-                        oGhostDetails.shutter = entity.thinker.shutterChance;
+                        oGhostDetails.shutter = (entity.thinker as VengefulThinker).shutterChance;
                         ++oGhostDetails.targets;
                         break;
                 }
@@ -734,7 +775,7 @@ class Game extends GameAbstract {
         }
     }
 
-    wraithShot(entity, fScore) {
+    wraithShot(entity: Entity, fScore: number) {
         entity.data.shot = true;
         this.storePhoto(
             CONSTS.PHOTO_TYPE_WRAITH, // type de photo
@@ -743,7 +784,12 @@ class Game extends GameAbstract {
         );
     }
 
-    ghostShot(entity, fScore) {
+    /**
+     * @param entity a hostile ghost
+     * @param fScore photo score of the ghost
+     * @returns damage dealt
+     */
+    ghostShot(entity: Entity, fScore: number): number {
         // initial damage based on visor accuracy
         const nDamage = this.visor.damageGhost(entity, fScore);
         // modified damage based on player attributes
@@ -799,7 +845,7 @@ class Game extends GameAbstract {
      * returns true if the visor is currently raised
      * @returns {boolean}
      */
-    isCameraRaised() {
+    isCameraRaised(): boolean {
         return this._cameraFilter.isVisible();
     }
 
@@ -807,20 +853,20 @@ class Game extends GameAbstract {
      * return true if the visor can be raised at the present moment
      * @returns {boolean}
      */
-    isCameraRaisable() {
+    isCameraRaisable(): boolean {
         return !this.isPlayerFrozen();
     }
 
-    getVengefulGhostCount () {
+    getVengefulGhostCount (): number {
         return this._activeGhosts.filter(g => g.data.type === 'v').length
     }
 
     /**
      * Captures an image at the given location (player location by default)
-     * @param pos {Position}
-     * @returns {HTMLCanvasElement} image (jpeg)
+     * @param pos point of view
+     * @returns image
      */
-    capture(pos = null) {
+    capture(pos: Position | null = null): HTMLCanvasElement {
         // creation d'une capture
         if (pos === null) {
             pos = this.player.position;
@@ -862,11 +908,11 @@ class Game extends GameAbstract {
      * returns true if player commands are frozen (keys + mouse)
      * @return {boolean}
      */
-    isPlayerFrozen() {
+    isPlayerFrozen(): boolean {
         return this.playerThinker.frozen;
     }
 
-    get player() {
+    get player(): Entity {
         return this.engine.camera;
     }
 
@@ -879,7 +925,7 @@ class Game extends GameAbstract {
      * applying wound on player
      * applying visual effect
      */
-    commitGhostAttack(oGhost, oTarget, nMultiplier: number = 1) {
+    commitGhostAttack(oGhost: Entity, oTarget: Entity, nMultiplier: number = 1) {
         if (oTarget === this.player) {
             // get ghost power
             this.logic.damagePlayer(oGhost, nMultiplier);
@@ -924,15 +970,14 @@ class Game extends GameAbstract {
 
     /**
      * Spawns a ghost at the given cell coordinates
-     * @param sRef {string} ghsot reference id
-     * @param xCell {number|string}
-     * @param [yCell] [{number}
-     * @returns {Entity}
+     * @param sRef ghost reference id
+     * @param xCell cell coordinate (x axis), or a locator reference
+     * @param yCell cell coordinate (y axis), when xCell is a coordinate
      */
-    spawnGhost(sRef, xCell, yCell = undefined) {
+    spawnGhost(sRef: string, xCell: number | string, yCell?: number): Entity {
         const oGhost = yCell === undefined && (typeof xCell === 'string')
             ? this.engine.createEntity(sRef, this.getLocator(xCell).position)
-            : this.engine.createEntity(sRef, new Position(this.engine.getCellCenter(xCell, yCell)));
+            : this.engine.createEntity(sRef, new Position(this.engine.getCellCenter(Number(xCell), yCell)));
         this.registerActiveGhost(oGhost);
         (oGhost.thinker as GhostThinker).target = this.player;
         oGhost.data.events = {
@@ -958,21 +1003,20 @@ class Game extends GameAbstract {
      *     x, y, // cell coordinates
      *     tags,  // tag components (space separated values)
      * }
-     * @return {array<{tag, x, y}>}
      */
-    getTags() {
-        const aTags = []; // output list
-        const tg = this.engine._tm._tg; // get the tag grid
+    getTags(): TagEntry[] {
+        const aTags: TagEntry[] = []; // output list
+        const tg = this.engine.tagManager.grid; // get the tag grid
         tg.iterate((x, y) => { // iterates all cells of the tag grid
             aTags.push(...this.getTagsAt(x, y));
         });
         return aTags;
     }
 
-    getTagsAt(x, y) {
-      const tg = this.engine._tm._tg;
+    getTagsAt(x: number, y: number): TagEntry[] {
+      const tg = this.engine.tagManager.grid;
       const cell = tg.cell(x, y);
-      const a = []
+      const a: TagEntry[] = []
       cell.forEach(t => {
         a.push({
           x, y,
@@ -1028,7 +1072,7 @@ class Game extends GameAbstract {
     initTagHandlers() {
         this.logGroup('initialize level tag handlers')
         this.log('calling init on each tag scripts');
-        const aDeleted = [];
+        const aDeleted: { x: number, y: number, id: number }[] = [];
         this.getTags().forEach(({id, tag, x, y}) => {
             const sCommand = tag[0];
             try {
@@ -1049,19 +1093,17 @@ class Game extends GameAbstract {
 
     /**
      * Returns true if the locator has been placed on map
-     * @param sRef {string}
-     * @return {boolean}
+     * @param sRef locator reference
      */
-    isLocatorDefined(sRef) {
+    isLocatorDefined(sRef: string): boolean {
         return sRef in this._locators
     }
 
     /**
      * Retrieves a locator by its reference
-     * @param sRef {string}
-     * @return {*}
+     * @param sRef locator reference
      */
-    getLocator(sRef) {
+    getLocator(sRef: string): Locator {
         if (this.isLocatorDefined(sRef)) {
             return this._locators[sRef];
         } else {
@@ -1072,13 +1114,13 @@ class Game extends GameAbstract {
     /**
      * Somes places make the camera filament glowing, this occurs when a supernatural event is about to occurs.
      * When a mystery is solved, the corresponding supernatural spot is no longer needed and is removed with this function
-     * @param sRef {string}
+     * @param sRef sense reference
      */
-    removeSense(sRef) {
+    removeSense(sRef: string) {
         this._senseMap.removeSense(sRef);
     }
 
-    getLevelState() {
+    getLevelState(): LevelState {
         const {doors, locks, tags, time} = this.engine.getEngineState();
         const decals = this.getDecalState();
         const senses = this._senseMap.state;
@@ -1093,7 +1135,7 @@ class Game extends GameAbstract {
         };
     }
 
-    setLevelState({ tags, doors, locks, decals, senses, time }) {
+    setLevelState({ tags, doors, locks, decals, senses, time }: LevelState) {
         this.engine.setEngineState({doors, locks, tags, time});
         this.setDecalState(decals);
         this._senseMap.state = senses
@@ -1105,7 +1147,12 @@ class Game extends GameAbstract {
 //    \__ \ (_) | |_| | | | | (_| \__ \
 //    |___/\___/ \__,_|_| |_|\__,_|___/
 
-    soundEvent(sId, params: any = {}) {
+    /**
+     * Plays the sound matching a game event
+     * @param sId event code (CONSTS.AUDIO_EVENT_*)
+     * @param params event parameters
+     */
+    soundEvent(sId: number, params: SoundEventParams = {}) {
         const am = this._audioManager
         switch (sId) {
             case AUDIO_EVENT_CAMERA_SHOOT: {

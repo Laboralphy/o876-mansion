@@ -3,11 +3,46 @@ import StoreAbstract from "@/StoreAbstract";
 import RangeCollider from "@/libs/range-collider";
 import * as Interpolator from "@/libs/interpolator";
 import * as CONSTS from "@/consts";
+import type { Pinia } from 'pinia';
+import type Entity from '@/engine/Entity';
+import type VengefulThinker from '@/thinkers.d/VengefulThinker';
 
-class Visor extends StoreAbstract {
+/**
+ * How a ghost is seen by the camera, updated each tick by GhostThinker.updateVisibilityData
+ * (stored in entity.data.visibility)
+ */
+export interface GhostVisibility {
+    visible: boolean; // ghost is visible (even partially)
+    offset: number; // last rendered position (x) of the ghost sprite on screen
+    size: number; // apparent size (width) of the ghost on screen
+    distance: number; // distance from player to ghost
+}
+
+/**
+ * How much a ghost is worth, if photographed now
+ */
+export interface GhostScore {
+    entity: Entity;
+    value: number; // 0 (no value) to 1 (maximum possible value)
+    precision: number; // 0..1 : how close to the center of the camera
+    distance: number;
+    proximity: number; // 0..1 : how close to the optimal distance
+}
+
+/**
+ * What changed when updating the camera energy
+ */
+export interface CameraEnergyUpdate {
+    sn: boolean; // the camera has just started aiming at something supernatural
+    max: boolean; // energy is at its maximum
+    prev: number; // energy before update
+    curr: number; // energy after update
+}
+
+class Visor extends StoreAbstract<'visor'> {
     _rcCam: RangeCollider;
 
-    constructor(store) {
+    constructor(store: Pinia) {
         super('visor');
         this.store = store;
         this._rcCam = new RangeCollider();
@@ -15,43 +50,38 @@ class Visor extends StoreAbstract {
 
     /**
      * tech : updates visor width, so the ghost score may be correctly computed.
-     * @param value
+     * @param value camera width, in pixels
      */
-    updateCameraWidth(value) {
+    updateCameraWidth(value: number) {
         this.commit(MUTATIONS.SET_CAMERA_WIDTH, {value});
     }
 
     /**
      * Keep a value between 0 and 1
-     * @param value {number} input
-     * @return {number} output
-     * @private
-     * @static
+     * @param value input
+     * @return output
      */
-    static _min_0_max_1(value) {
+    static _min_0_max_1(value: number): number {
         return Math.max(0, Math.min(1, value));
     }
 
     /**
      *
-     * @param value {number} input
-     * @param val0 {number} value when output is 0
-     * @param val1 {number} value when output is 1
-     * @return {number} output
-     * @private
-     * @static
+     * @param value input
+     * @param val0 value when output is 0
+     * @param val1 value when output is 1
+     * @return output
      */
-    static _linear_0_1(value, val0, val1) {
+    static _linear_0_1(value: number, val0: number, val1: number): number {
         return Visor._min_0_max_1(Interpolator.linear(value, val0, 0, val1, 1));
     }
 
     /**
      * Gets how much energy a ghost worth
      * and how many points the ghost photo will score
-     * @param entity {Entity}
-     * @return {{value, precision, distance}} ghost value from 0 (no value) to 1 (maximum possible value)
+     * @param entity a ghost
      */
-    getGhostScore(entity) {
+    getGhostScore(entity: Entity): GhostScore {
         if (!entity.data.visibility) {
             return {
                 entity,
@@ -61,7 +91,7 @@ class Visor extends StoreAbstract {
                 proximity: 0
             };
         }
-        const {visible, size, offset, distance} = entity.data.visibility;
+        const {visible, size, offset, distance}: GhostVisibility = entity.data.visibility;
         if (!visible) {
             return {
                 entity,
@@ -99,12 +129,13 @@ class Visor extends StoreAbstract {
 
     /**
      * Damage currently aimed ghosts
-     * @param entity {Entity}
-     * @param amount {number}
-     * @returns {number}
+     * @param entity a hostile ghost (its thinker is a VengefulThinker)
+     * @param amount photo score of the ghost
+     * @returns damage dealt
      */
-    damageGhost(entity, amount) {
-        const fCrit = entity.thinker.shutterChance ? this.prop('getCameraCriticalModifier') : 1;
+    damageGhost(entity: Entity, amount: number): number {
+        const thinker = entity.thinker as VengefulThinker;
+        const fCrit = thinker.shutterChance ? this.prop('getCameraCriticalModifier') : 1;
         const nDamage = Math.ceil(
             amount *
             this.prop('getCameraEnergy') *
@@ -113,20 +144,20 @@ class Visor extends StoreAbstract {
         );
         entity.data.vitality -= nDamage;
         if (entity.data.vitality <= 0) {
-            entity.thinker.kill();
+            thinker.kill();
         } else {
-            entity.thinker.wound(entity.thinker.shutterChance);
+            thinker.wound(thinker.shutterChance);
         }
         return nDamage;
     }
 
     /**
      * Change visor energy indicator to match the store value
-     * @param aGhosts {[]} ghost that are actually being aimed by the visor
-     * @param bSupernatural {boolean} true : la camaera est en train de viser un phenomène surnaturel
+     * @param aGhosts ghosts that are actually being aimed by the visor
+     * @param bSupernatural true : the camera is aiming at a supernatural phenomenon
      */
-    updateCameraEnergy(aGhosts, bSupernatural) {
-        const nEnergy = aGhosts.reduce((prev, curr) => {
+    updateCameraEnergy(aGhosts: GhostScore[], bSupernatural: boolean): CameraEnergyUpdate {
+        const nEnergy = aGhosts.reduce((prev: number, curr: GhostScore) => {
             return prev + curr.value;
         }, 0);
         const nPrevEnergy = this.energy
@@ -157,25 +188,22 @@ class Visor extends StoreAbstract {
 
     /**
      * returns the currently accumulated energy (by aiming at ghosts)
-     * @returns {number}
      */
-    get energy() {
+    get energy(): number {
         return this.prop('getCameraEnergy');
     }
 
     /**
      * Return the maximum value of energy accumulation
-     * @returns {number}
      */
-    get energyMax() {
+    get energyMax(): number {
         return this.prop('getCameraEnergyMax');
     }
 
     /**
      * returns true if the camera is aiming at some supernatural thing
-     * @returns {boolean}
      */
-    get aimingSupernatural() {
+    get aimingSupernatural(): boolean {
         return this.prop('isCameraAimingSupernatural');
     }
 
@@ -183,7 +211,7 @@ class Visor extends StoreAbstract {
      * returns the last time stamp, the camera has shot
      * to limit rate of fire
      */
-    get lastShotTime() {
+    get lastShotTime(): number {
         return this.prop('getCameraLastShotTime');
     }
 
@@ -191,7 +219,7 @@ class Visor extends StoreAbstract {
         this.commit(MUTATIONS.DEPLETE_ENERGY);
     }
 
-    setShootLastTime(time) {
+    setShootLastTime(time: number) {
         this.commit(MUTATIONS.SET_SHOOT_LAST_TIME, {time});
     }
 }

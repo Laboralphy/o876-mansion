@@ -1,16 +1,50 @@
-import { Howl, Howler } from 'howler'
+import { Howl, Howler, type HowlOptions, type PannerAttributes } from 'howler'
 import AUDIO from '@/data/audio.json'
+import type Position from '@/engine/Position'
+
+/**
+ * A loaded sound
+ */
+export interface LoadedSound {
+    id: string; // sound id : the file name, without folder
+    filename: string; // file name, relative to the audio folder, without extension
+    sound: Howl;
+}
+
+/**
+ * The background music
+ */
+interface BGM extends LoadedSound {
+    next?: string; // the music that will be played once this one has faded out
+}
+
+/**
+ * A sound being played (see play())
+ */
+export interface PlayingSound {
+    id: number; // Howler sound instance id
+    sound: Howl;
+}
+
+/**
+ * Sound loading options (the source is computed from the file name)
+ */
+export type SoundOptions = Omit<HowlOptions, 'src'>;
+
+export interface AudioManagerState {
+    bgm: string;
+}
 
 class AudioManager {
     BGM_VOLUME: number;
     SND_VOLUME: number;
-    _bgm: any;
+    _bgm: BGM | null;
     _lastBgm: string;
     _ovrBgm: boolean;
-    _registry: any;
+    _registry: Record<string, LoadedSound>;
     _saveBgm: string;
     audioPath: string;
-    streamedSounds: any;
+    streamedSounds: Set<string>;
 
     constructor () {
         this.audioPath = 'assets/audio'
@@ -30,20 +64,20 @@ class AudioManager {
         this.SND_VOLUME = 0.5
     }
 
-    get state () {
+    get state (): AudioManagerState {
         return {
             bgm: this._lastBgm
         }
     }
 
-    set state (value) {
+    set state (value: AudioManagerState) {
         const { bgm } = value
         if (bgm) {
             this.playBGM(bgm)
         }
     }
 
-    buildFileLoadingArray (sFile) {
+    buildFileLoadingArray (sFile: string): string[] {
         return [
             this.audioPath + '/mp3/' + sFile + '.mp3',
             this.audioPath + '/ogg/' + sFile + '.ogg',
@@ -52,11 +86,10 @@ class AudioManager {
 
     /**
      *
-     * @param sFile {string}
-     * @param options {object}
-     * @returns {Promise<{filename: string, sound: Howl, id: number}>}
+     * @param sFile file name, relative to the audio folder, without extension
+     * @param options Howler options
      */
-    load (sFile, options): Promise<{ id: string, filename: string, sound: Howl }> {
+    load (sFile: string, options: SoundOptions): Promise<LoadedSound> {
         return new Promise((resolve, reject) => {
             try {
                 const aFile = sFile.split('/')
@@ -83,11 +116,14 @@ class AudioManager {
         })
     }
 
-    loadSoundCategory (aFiles, options) {
+    loadSoundCategory (aFiles: string[], options: SoundOptions): Promise<LoadedSound>[] {
         return aFiles.map(f => this.load(f, options))
     }
 
-    setListeningEntity (position) {
+    /**
+     * Places the listener (the player's ears)
+     */
+    setListeningEntity (position: Position) {
         Howler.pos(position.x, position.y, position.z)
         const angle = position.angle
         const x = Math.cos(angle);
@@ -111,7 +147,7 @@ class AudioManager {
         this.stop()
     }
 
-    stopBGM () {
+    stopBGM (): Promise<void> {
         return new Promise<void>(resolve => {
             this._bgm.sound.fade(this.BGM_VOLUME, 0, 2000, undefined)
             this._bgm.sound.once('fade', () => {
@@ -120,18 +156,24 @@ class AudioManager {
         })
     }
 
-    setBGMVolume (value) {
+    /**
+     * @param value 0..1
+     */
+    setBGMVolume (value: number) {
         this.BGM_VOLUME = value
         if (this._bgm) {
             this._bgm.sound.volume(value)
         }
     }
 
-    setSoundVolume (value) {
+    /**
+     * @param value 0..1
+     */
+    setSoundVolume (value: number) {
         this.SND_VOLUME = value
     }
 
-    async playBGM (sFile) {
+    async playBGM (sFile: string) {
         console.log('[a] now playing', sFile)
         this._lastBgm = sFile
         if (this._ovrBgm) {
@@ -176,9 +218,9 @@ class AudioManager {
     /**
      * Remplacer la musique actuelle par une musique de combat
      * Gérer les changement de BGM
-     * @param sFile {string}
+     * @param sFile music file name
      */
-    async playOverriddenBGM (sFile) {
+    async playOverriddenBGM (sFile: string) {
         // Détecter si on est deja en overridden
         // si oui : ne rien faire
         // sinon : sauver le BGM File actuel
@@ -204,10 +246,10 @@ class AudioManager {
     /**
      * Joue un son d'ambiance. Ce genre de son n'a pas besoin d'être chargé au debut du prorgamme.
      * Même si le son est joué avec une fraction de seconde en retard ce n'est pas grave.
-     * @param sFile {string}
-     * @param bLoop {boolean} le son sera bouclé et ne sera déchargé que si on l'arrête manuellement
+     * @param sFile file name
+     * @param bLoop le son sera bouclé et ne sera déchargé que si on l'arrête manuellement
      */
-    async playAmbiance (sFile, bLoop = false) {
+    async playAmbiance (sFile: string, bLoop = false): Promise<{ sound: Howl }> {
         const { sound } = await this.load(sFile, {
             autoplay: true,
             loop: bLoop
@@ -222,15 +264,17 @@ class AudioManager {
     }
 
     /**
-     * returns : any, because @types/howler does not list "exponential" as a distanceModel,
-     * which is nevertheless a valid Web Audio PannerNode distance model.
+     * Spatial attributes of a positioned sound
+     * @param nDistance reference distance : the sound volume starts decreasing beyond this distance
      */
-    getPannerAttribute (nDistance = 128): any {
+    getPannerAttribute (nDistance = 128): PannerAttributes {
         return {
             coneInnerAngle: 360,
             coneOuterAngle: 360,
             coneOuterGain: 0,
-            distanceModel: 'exponential',
+            // @types/howler only lists "inverse" and "linear", but "exponential" is a valid
+            // Web Audio PannerNode distance model, which Howler passes through.
+            distanceModel: 'exponential' as PannerAttributes['distanceModel'],
             maxDistance: 65536,
             refDistance: nDistance,
             rolloffFactor: 2.5,
@@ -241,10 +285,10 @@ class AudioManager {
     /**
      * Joue un son stocké en mémoire
      * Ne fonctionne que pour les sons communs et courts comme les bruitages ou autres effets sonores de jeu
-     * @param sId
-     * @returns {*}
+     * @param sId sound id (file name without folder)
+     * @returns the playing sound, or undefined if the sound is not registered
      */
-    play (sId) {
+    play (sId: string): PlayingSound | undefined {
         if (sId in this._registry) {
             const { sound } = this._registry[sId]
             sound.volume(this.SND_VOLUME)

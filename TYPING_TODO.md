@@ -30,8 +30,8 @@ npx vue-tsc --noEmit --noImplicitAny
 |---|---|---:|---:|---:|
 | [x] | Step 1 — leaf libraries | 20 | 115 | 219 |
 | [x] | Step 2 — engine (compat layer over raycaster386) | 14 | 52 | 68 |
-| [ ] | Step 3 — stores | 5 | 43 | 56 |
-| [ ] | Step 4 — game core classes | 8 | 96 | 171 |
+| [x] | Step 3 — stores | 5 | 43 | 56 |
+| [x] | Step 4 — game core classes | 8 | 96 | 171 |
 | [ ] | Step 5 — game visual filters | 12 | 39 | 63 |
 | [ ] | Step 6 — thinkers (AI) | 6 | 37 | 44 |
 | [ ] | Step 7 — scripts | 40 | 56 | 205 |
@@ -40,6 +40,8 @@ npx vue-tsc --noEmit --noImplicitAny
 
 **Remaining after step 1 : 625** (some parameters of later steps were typed for free by the typed libraries).
 **Remaining after step 2 : 532.**
+**Remaining after step 3 : 472.**
+**Remaining after step 4 : 322.**
 
 ### Explicit `any`
 
@@ -53,6 +55,8 @@ grep -rnoE ':\s*any\b|as any\b|<any>|any\[\]' src --include=*.ts --include=*.vue
 |---|---:|
 | start of step 2 | 171 |
 | step 2 | 88 — none left in `src/engine`, only `src/libs/events.ts` in `src/libs` |
+| step 3 | 75 — none left in `src/stores`, `StoreAbstract.ts`, `UI.ts`, `Album.ts`, `Logic.ts` |
+| step 4 | 59 — none left in `src/*.ts` nor `src/data` : only `src/filters` (42), `src/thinkers.d` (14), `src/libs/events.ts` (3) |
 
 `libs/events.ts` keeps `(...args: any[])` on purpose : it is what lets listeners destructure their payload
 (`.on('x', ({a, b}) => ...)`). Removing it requires a typed event map per emitter.
@@ -62,18 +66,71 @@ Shared types available for the next steps :
 - `ThinkerClass`, `StateDefinition`, `Transition`, `ScriptParameters`
 - `GameOptions` (`engine/GameAbstract.ts`), `PulseOptions`, `FillStyle`, `TilesetAnimation`
 - `Game.playerThinker` : the camera thinker, typed as `PlayerThinker`
+- stores (step 3) : `StoreAbstract<N>` is generic : `commit` / `dispatch` only accept the actions of store `N`,
+  with their payload type checked (and required when the action has one), `prop` / `watch` return the getter type.
+  Helpers : `StoreOf<N>`, `ActionName<N>`, `GetterName<N>`, `PayloadOf<N, A>`, `ResultOf<N, A>`.
+- `stores/payloads.ts` : `ValuePayload<T>`, `RefPayload`, `ContentPayload<T>`
+- `stores/album/types.ts` : `Photo`, `PhotoType`, `StorePhotoPayload`, `SetPhotoTypePayload`
+- `stores/logic/types.ts` : `ItemData`, `ItemType`, `InventoryEntry`
+- `stores/ui/types.ts` : `MainTab`, `InventoryTab`, `NoteType`, `Note`, `PopupMessage`, `ShotPayload`, `PhotoDetailsPayload`
+- game core (step 4) :
+  - `src/types.ts` : `DecalMutation`, `LevelMutations`, `LevelState`, `SerializedLevelState`, `PlayerState`,
+    `AlbumLogicState`, `Locator`, `TagEntry`, `PhotoTag`, `EntityEvents` / `EntityEventName`, `SoundEventParams`
+  - `src/data/types.ts` : `GhostData`, `GhostEntry`, `MissileData`, `MissileEffect` (+ re-exports `RceBlueprint`, `RceTileset`) ;
+    `DATA` is typed (`BLUEPRINTS: RceBlueprint[]`, `TILESETS: RceTileset[]`, `GHOSTS: Record<string, GhostData>`, `ITEMS: ItemData[]`)
+  - `Visor.ts` : `GhostVisibility` (shape of `entity.data.visibility`, for `GhostThinker`), `GhostScore`, `CameraEnergyUpdate`
+  - `AudioManager.ts` : `LoadedSound`, `PlayingSound`, `SoundOptions`, `AudioManagerState`
+  - `SenseMap.ts` : `SenseMapState` ; stores export `AlbumState`, `LogicState`
 
-## Where we stopped (2026-10-07)
+## Where we stopped (2026-10-08)
 
 Steps 1 and 2 are done and committed (`8535bbc` Typing function I, `aadb5c9` Typing function II).
-`vue-tsc --noEmit` and `npm run build` are clean. Counts : **532** untyped parameters, **88** explicit `any`.
+Steps 3 and 4 are done (not committed yet). `vue-tsc --noEmit` and `npm run build` are clean.
+Counts : **322** untyped parameters, **59** explicit `any`.
 
 Goal : not only reach 0 untyped parameters, but eradicate as many explicit `any` as possible along the way
 (replace each `any` field of a touched class by its real type).
 
-### Next : step 3 — stores (56 parameters)
+### Step 3 notes
 
-`src/stores/ui`, `album`, `logic`, `visor`, `src/mixins/ui.ts`. Then step 4 (`Game.ts` has 83 parameters).
+- Pinia options stores cannot infer `this` inside actions once `noImplicitAny` is on (the store type refers to
+  itself) : callbacks inside actions (`.find(p => ...)`, `$patch(state => ...)`) need an explicit parameter type.
+- Behaviour changes, all checked at runtime :
+  - `ui` `SET_ALBUM_ACTIVE_TYPE` wrote into a non-existent `state.album` (dead and broken since Vuex) : it now
+    delegates to the album store `SET_ACTIVE_TYPE`.
+  - `ui` `SHOW_FIRST_PAGE` wrote `mainmenu.visible`, undeclared : now declared in the state (still read by nobody).
+  - `SET_STATE_CONTENT` (album, logic) : `$patch` + `Object.assign`, top-level keys replaced as before.
+  - `SET_PHOTO_DETAILS` : `description` defaults to `[]` (was `''`, spread to nothing : same result).
+  - `SET_SHOT` : `damage` defaults to `0` (was `undefined` : same getter results).
+- The typed `StoreAbstract` found two wrong calls : `UI.show()` / `UI.hide()` passed `{}` to actions without
+  payload (removed), `UI.addNote(ref, sType)` accepted any string as note type (now `NoteType`).
+
+### Step 4 notes
+
+- `Game.getCompiledBlueprints` mutated the shared game data : `DATA.GHOSTS` entries were turned into blueprints in
+  place and pushed into `DATA.BLUEPRINTS`. A ghost extending an already patched ghost (`g_test_2` extends `g_test`)
+  therefore inherited blueprint properties (`id: 'g_test'`, `fx`, `size`, a nested `data`...) into its own `data`.
+  Rewritten to build new blueprint objects : same blueprints, clean `data`, `DATA` untouched (checked at runtime).
+- `Serializer.setDecalState` replayed `'app'` mutations with `data.side` instead of `data.sides` : applied decals
+  were restored on no side at all. Fixed (the `DecalMutation` union now types the three kinds of mutation).
+- `Game.getTags` / `getTagsAt` reached into `engine._tm._tg` : now `engine.tagManager.grid`.
+- Audio event codes (`CONSTS.AUDIO_EVENT_*`) are numbers : `soundEvent(sId: number, ...)`.
+- `AudioManager.getPannerAttribute` : the `any` return type is replaced by Howler's `PannerAttributes`, with a single
+  cast on `distanceModel: 'exponential'` (valid Web Audio value missing from `@types/howler`).
+- `shutterChance`, `kill()`, `wound()` only exist on `VengefulThinker` : `Visor.damageGhost` and `Game` cast
+  `entity.thinker as VengefulThinker` where a hostile ghost is expected.
+- `DataBuilder.ts` is typed but not used anywhere (`getCompiledBlueprints` does its job) : candidate for removal.
+- Findings left for later steps :
+  - step 7 : `scripts.d/tag/locator.ts` converts the locator angle with `180 * angle / Math.PI` (radians to degrees),
+    while `Position.angle` is in radians : probably meant `Math.PI * angle / 180`. Not changed.
+  - step 7 : `scripts.ts` exports `Record<string, Record<string, any>>` : an explicit `any` the grep count misses.
+  - `Game.applyDecal` uses `tileset.getImage()`, the whole shaded atlas, which is `null` for unshaded (light source)
+    tilesets. Same behaviour as the original engine ; only reached through decal state replay, nothing calls it.
+
+### Next : step 5 — game visual filters (58 parameters)
+
+`PhotoMogrify.ts` (23), `CameraObscura.ts` (6), `SimpleText.ts` (6), `Splash.ts` (5)... `src/filters` also holds
+42 of the remaining 59 explicit `any`.
 
 ### Pending decision : `LinearBoltThinker.fire()` (step 6)
 

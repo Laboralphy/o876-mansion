@@ -6,8 +6,9 @@ import * as UI_MUTATIONS from '@/stores/ui/mutation-types';
 import * as UI_ACTIONS from '@/stores/ui/action-types';
 import Application from '@/components/Application.vue';
 import StoreAbstract from "@/StoreAbstract";
+import type { NoteType, ShotPayload } from '@/stores/ui/types';
 
-class UI extends StoreAbstract {
+class UI extends StoreAbstract<'ui'> {
     private readonly _app: App;
 
     constructor(sDomSelector: string) {
@@ -37,16 +38,16 @@ class UI extends StoreAbstract {
      */
     popup(sKey: string, sIconRef?: string, values: Record<string, any> = {}) {
         const icon = !!sIconRef && sIconRef.length > 0 ? 'assets/icons/' + sIconRef + '.png' : '';
-        const text = i18n.t(sKey, values);
+        const text = String(i18n.t(sKey, values));
         return this.dispatch(UI_ACTIONS.SHOW_POPUP, {text, icon});
     }
 
     show() {
-        this.dispatch(UI_ACTIONS.SHOW_UI_FRAME, {});
+        this.dispatch(UI_ACTIONS.SHOW_UI_FRAME);
     }
 
     hide() {
-        this.dispatch(UI_ACTIONS.HIDE_UI_FRAME, {});
+        this.dispatch(UI_ACTIONS.HIDE_UI_FRAME);
     }
 
     displayPhotoDetailScore({
@@ -57,7 +58,7 @@ class UI extends StoreAbstract {
         targets,
         shutter,
         damage
-    }) {
+    }: ShotPayload) {
         this.dispatch(UI_ACTIONS.SET_SHOT, {
             value,
             energy,
@@ -69,7 +70,7 @@ class UI extends StoreAbstract {
         });
     }
 
-    displayPhotoScore(nValue) {
+    displayPhotoScore(nValue: number) {
         this.dispatch(UI_ACTIONS.SET_SHOT, {
             value: nValue,
             energy: 0,
@@ -89,11 +90,11 @@ class UI extends StoreAbstract {
     }
 
     /**
-     *
-     * @param ref
-     * @param sType {string} voir components.Notes.getNoteTypes
+     * Adds a document to the "notes" tab
+     * @param ref translation reference (notes namespace)
+     * @param sType document category, see components/Notes.vue getNoteTypes
      */
-    addNote (ref, sType = 'note') {
+    addNote (ref: string, sType: NoteType = 'note') {
         this.commit(UI_MUTATIONS.ADD_NOTE_ENTRY, { ref, type: sType })
     }
 }
