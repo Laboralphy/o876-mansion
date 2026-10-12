@@ -16,22 +16,26 @@ const TIME_PER_CHAR = 2;
 - la function easing.next doit etre remplacée par .compute
 - aText indéfini, erreur dans la construction de la clé recherchant le texte
  */
+type TextInput = {
+    text: string[], // one item per line
+    x: number,
+    y: number
+};
+
 class SimpleText extends AbstractFilter {
-    aText: any;
     nPhase: number;
     nTime: number;
-    oCanvas: any;
+    oCanvas: HTMLCanvasElement;
     oEasingAlpha: Easing;
-    oInput: any;
+    oInput: TextInput;
 
     constructor() {
         super();
         this.oCanvas = null;
-        this.aText = null;
         this.oEasingAlpha = new Easing();
         this.nTime = 0;
         this.nPhase = 0;
-        this.oInput = {};
+        this.oInput = {text: [], x: 0, y: 0};
         this
             .oEasingAlpha
             .reset()
@@ -41,7 +45,7 @@ class SimpleText extends AbstractFilter {
             .use(Easing.SMOOTHSTEP);
     }
 
-    processText() {
+    processText(): void {
         const {text, x, y} = this.oInput;
         const cvs = this.oCanvas;
         const ctx = cvs.getContext('2d');
@@ -50,26 +54,25 @@ class SimpleText extends AbstractFilter {
         ctx.fillStyle = 'white';
         ctx.strokeStyle = 'black';
         ctx.textAlign = 'center';
-        ctx.textBaseLine = 'middle';
         this.nTime = TIME_AT_0_LENGTH;
         let yText = y;
         let xText = x;
-        text.forEach(function(t, i) {
+        text.forEach(t => {
             ctx.strokeText(t, xText, yText);
             ctx.fillText(t, xText, yText);
             this.nTime += t.length * TIME_PER_CHAR;
             yText += FONT_SIZE * 1.2 | 0;
-        }, this);
+        });
         this.nTime = Math.round(this.nTime);
     }
 
-    text(aText, x, y) {
+    text(aText: string[], x: number, y: number): void {
         this.oInput = {text: aText, x, y};
     }
 
     /** Fonction appelée par le gestionnaire d'effet pour recalculer l'état de l'effet
      */
-    process() {
+    process(): void {
         switch (this.nPhase) {
             case 0:
                 if (this.oEasingAlpha.compute().over()) {
@@ -100,7 +103,7 @@ class SimpleText extends AbstractFilter {
 
     /** Fonction appelée par le gestionnaire d'effet pour le rendre à l'écran
      */
-    render(canvas) {
+    render(canvas: HTMLCanvasElement): void {
         if (this.oCanvas === null) {
             this.oCanvas = CanvasHelper.createCanvas(canvas.width, canvas.height);
             this.processText();
@@ -113,7 +116,7 @@ class SimpleText extends AbstractFilter {
         ctx.restore();
     }
 
-    over() {
+    over(): boolean {
         return super.over() || this.nPhase > 2;
     }
 }

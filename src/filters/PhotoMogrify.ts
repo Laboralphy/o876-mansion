@@ -30,31 +30,48 @@ const STATE_PHOTO1_STILL = 40;
 const STATE_PHOTO1_FADE_OUT = 50;
 const STATE_OVER = 60;
 
+type Point = { x: number, y: number };
+
+/**
+ * a glowing spot, displayed on the transformation edge. n is its opacity (fades out by quarters)
+ */
+type Spot = Point & { n: number };
+
+/**
+ * for each mogrify step (0 .. MOGRIFY_STEPS - 1), the perlin mask points of that step
+ */
+type MogrifyRegistry = Point[][];
+
+export type PhotoMogrifyOptions = {
+    src: HTMLCanvasElement,
+    dst: HTMLCanvasElement,
+    end?: (filter: PhotoMogrify) => void
+};
+
 class PhotoMogrify extends AbstractFilter {
     _easing: Easing;
-    _end: any;
+    _end: (filter: PhotoMogrify) => void;
     _fAlpha: number;
     _iMogrifyStep: number;
-    _mogrifyCanvases: any[];
-    _mogrifyRegistry: any;
-    _photo0: any;
-    _photo1: any;
-    _renderCanvas: any;
-    _spot: any;
-    _spots: any[];
-    _state: any;
+    _mogrifyCanvases: HTMLCanvasElement[];
+    _mogrifyRegistry: MogrifyRegistry;
+    _photo0: HTMLCanvasElement;
+    _photo1: HTMLCanvasElement;
+    _renderCanvas: HTMLCanvasElement;
+    _spot: HTMLCanvasElement;
+    _spots: Spot[];
+    _state: number;
     _timer: number;
-    _workingCanvas: any;
+    _workingCanvas: HTMLCanvasElement;
 
     /**
-     *
-     * @param src {HTMLCanvasElement}
-     * @param dst {HTMLCanvasElement}
-     * @param end {function}
+     * @param src photo displayed first
+     * @param dst photo it is transformed into (same size as src)
+     * @param end called when the filter is over
      */
     constructor({
         src, dst, end = function() {}
-    }) {
+    }: PhotoMogrifyOptions) {
         super();
         if (src.width !== dst.width || src.height !== dst.height) {
             throw new Error('PhotoMogrify : both canvases must be the same size');
@@ -79,13 +96,12 @@ class PhotoMogrify extends AbstractFilter {
     /**
      * A partir d'un bruit de perlin, discretise le bruit sur un certain nombnre de palier (MOGRIFY_STEPS)
      * puis créé un registre permettant de classer les pixels selon leur valeur palier
-     * @returns {[]}
      * @private
      */
-    _createMogrifyRegistry() {
-        const aBaseNoise = Tools2D.createArray2D(PERLIN_SIZE, PERLIN_SIZE, (x, y) => Math.random(), Float32Array);
+    _createMogrifyRegistry(): MogrifyRegistry {
+        const aBaseNoise = Tools2D.createArray2D(PERLIN_SIZE, PERLIN_SIZE, () => Math.random(), Float32Array);
         const pn = Perlin.generate(aBaseNoise, 6);
-        const aRegistry = [];
+        const aRegistry: MogrifyRegistry = [];
         for (let i = 0; i < MOGRIFY_STEPS; ++i) {
             aRegistry[i] = [];
         }
@@ -107,7 +123,7 @@ class PhotoMogrify extends AbstractFilter {
      * @param color {string} couleur
      * @private
      */
-    _createMaskedCanvasFromRegistry(n0, n1, color) {
+    _createMaskedCanvasFromRegistry(n0: number, n1: number, color: string): HTMLCanvasElement {
         const mc = CanvasHelper.createCanvas(PERLIN_SIZE, PERLIN_SIZE);
         const mr = this._mogrifyRegistry;
         const ctx = mc.getContext('2d');
@@ -126,13 +142,12 @@ class PhotoMogrify extends AbstractFilter {
     /**
      * copie les pixel de la photo dans un nouveau canvas, mais uniquement les pixel dont le le point du masque-perlin
      * correspondant est compris entre deux valeur.
-     * @param n0
-     * @param n1
-     * @param cvsPhoto
-     * @returns {HTMLCanvasElement}
+     * @param n0 minimum mask value
+     * @param n1 maximum mask value
+     * @param cvsPhoto photo
      * @private
      */
-    _combinePhotoAndMask(n0, n1, cvsPhoto) {
+    _combinePhotoAndMask(n0: number, n1: number, cvsPhoto: HTMLCanvasElement): HTMLCanvasElement {
         if (n0 > n1) {
             n0 = n1;
         }
@@ -148,7 +163,7 @@ class PhotoMogrify extends AbstractFilter {
         return rc;
     }
 
-    _renderSpot(dstctx, x, y) {
+    _renderSpot(dstctx: CanvasRenderingContext2D, x: number, y: number): void {
         if (!this._spot) {
             this._spot = CanvasHelper.createCanvas(SPOT_RADIUS * 2 + 1, SPOT_RADIUS * 2 + 1);
             const ctx = this._spot.getContext('2d');
@@ -163,7 +178,7 @@ class PhotoMogrify extends AbstractFilter {
         dstctx.drawImage(this._spot, x, y);
     }
 
-    _addSpots(dstcvs, aPoints, n) {
+    _addSpots(dstcvs: HTMLCanvasElement, aPoints: Point[], n: number): void {
         const nPointCounts = aPoints.length;
         if (nPointCounts > 0) {
             const wdstcvs = dstcvs.width;
@@ -179,7 +194,7 @@ class PhotoMogrify extends AbstractFilter {
         }
     }
 
-    _renderSpots(dstcvs) {
+    _renderSpots(dstcvs: HTMLCanvasElement): void {
         const spots = this._spots;
         const l = spots.length;
         if (l > 0) {
@@ -201,12 +216,12 @@ class PhotoMogrify extends AbstractFilter {
 
     /**
      * à partir de deux photo de même taille, calcule un troisième photo qui est la combianison des deux premières.
-     * @param n
-     * @param c0
-     * @param c1
+     * @param n mogrify step
+     * @param c0 photo shown below the edge
+     * @param c1 photo shown above the edge
      * @private
      */
-    _transMogrify(n, c0, c1) {
+    _transMogrify(n: number, c0: HTMLCanvasElement, c1: HTMLCanvasElement): void {
         const nMarge = 2;
         const wc = this._workingCanvas;
         const ctx = wc.getContext('2d');
@@ -228,7 +243,7 @@ class PhotoMogrify extends AbstractFilter {
      * @param width {number}
      * @param height {number}
      */
-    drawImageAtCenter(src, dst, width = -1, height = -1) {
+    drawImageAtCenter(src: HTMLCanvasElement, dst: HTMLCanvasElement, width: number = -1, height: number = -1): void {
         if (width < 0) {
             width = src.width;
         }
@@ -248,7 +263,7 @@ class PhotoMogrify extends AbstractFilter {
      * Rempli le rendercanvas avec un photo et une bordure blanche
      * @param oPhotoCvs {HTMLCanvasElement}
      */
-    buildPhoto(oPhotoCvs) {
+    buildPhoto(oPhotoCvs: HTMLCanvasElement): void {
         const canvas = this._renderCanvas;
         const ctx = canvas.getContext('2d');
         ctx.fillStyle = 'antiquewhite';
@@ -256,7 +271,7 @@ class PhotoMogrify extends AbstractFilter {
         this.drawImageAtCenter(oPhotoCvs, canvas, PHOTO_TARGET_WIDTH, PHOTO_TARGET_HEIGHT);
     }
 
-    process() {
+    process(): void {
         switch (this._state) {
             case STATE_INIT:
                 this._state = STATE_PHOTO0_BUILDING;
@@ -329,11 +344,11 @@ class PhotoMogrify extends AbstractFilter {
         }
     }
 
-    over() {
+    over(): boolean {
         return this._state === STATE_OVER;
     }
 
-    flip(canvas, fAlpha = 1) {
+    flip(canvas: HTMLCanvasElement, fAlpha: number = 1): void {
         const ctx = canvas.getContext('2d');
         if (fAlpha < 1) {
             ctx.save();
@@ -345,7 +360,7 @@ class PhotoMogrify extends AbstractFilter {
         }
     }
 
-    render(canvas) {
+    render(canvas: HTMLCanvasElement): void {
         this.flip(canvas, this._fAlpha);
     }
 }

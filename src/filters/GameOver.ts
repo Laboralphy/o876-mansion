@@ -5,7 +5,7 @@ class GameOver extends FadeOut {
     super({ duration: 3000 });
   }
 
-  render (canvas) {
+  render (canvas: HTMLCanvasElement): void {
     super.render(canvas);
     // display a game over message
   }

@@ -7,14 +7,17 @@ import AbstractFilter from "@/libs/filters/AbstractFilter";
  * @description This filter will render two black strips (top and bottom)
  */
 class CinemaScope extends AbstractFilter {
-    _size100: any;
+    _size100: number;
 
-    constructor(size = 15) {
+    /**
+     * @param size strip height, in percent of the screen height
+     */
+    constructor(size: number = 15) {
         super();
         this._size100 = size / 100;
     }
 
-    render(canvas) {
+    render(canvas: HTMLCanvasElement): void {
         const context = canvas.getContext('2d');
         const w = canvas.width;
         const h = canvas.height;

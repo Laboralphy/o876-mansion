@@ -1,4 +1,18 @@
 import AbstractFilter from "@/libs/filters/AbstractFilter";
+import type { Sprite } from "@laboralphy/raycaster386";
+import type Entity from "@/engine/Entity";
+
+/**
+ * A screaming ghost : its sprite is drawn bigger and bigger, fading out
+ */
+type ScreamingGhost = {
+    time: number,
+    sprite: Sprite,
+    x: number,
+    y: number,
+    w: number,
+    h: number
+};
 
 /**
  * Makes ghost screeam
@@ -6,7 +20,7 @@ import AbstractFilter from "@/libs/filters/AbstractFilter";
 
 class GhostScreamer extends AbstractFilter {
     TIME_OUT: number;
-    _aGhosts: any[];
+    _aGhosts: ScreamingGhost[];
 
     constructor() {
         super();
@@ -14,8 +28,8 @@ class GhostScreamer extends AbstractFilter {
         this.TIME_OUT = 25;
     }
 
-    addGhost(oGhost) {
-        const g = {
+    addGhost(oGhost: Entity): void {
+        const g: ScreamingGhost = {
             time: 0,
             sprite: oGhost.sprite,
             x: 0,
@@ -26,10 +40,10 @@ class GhostScreamer extends AbstractFilter {
         this._aGhosts.push(g);
     }
 
-    process() {
+    process(): void {
         let timeout = this.TIME_OUT;
         if (this._aGhosts.length > 0) {
-            this._aGhosts = this._aGhosts.filter(function(g) {
+            this._aGhosts = this._aGhosts.filter(g => {
                 const x =  g.time / timeout;
                 const x1 = 1 + x;
                 const r = g.sprite.lastRendered;
@@ -43,16 +57,16 @@ class GhostScreamer extends AbstractFilter {
         }
     }
 
-    render(oCanvas) {
+    render(oCanvas: HTMLCanvasElement): void {
         let ghosts = this._aGhosts;
         if (ghosts.length >= 0) {
             let oContext = oCanvas.getContext('2d');
-            let x, x1, g, r, fAlpha = oContext.globalAlpha, gco = oContext.globalCompositeOperation;
+            const fAlpha = oContext.globalAlpha, gco = oContext.globalCompositeOperation;
             oContext.globalCompositeOperation = 'lighter';
             for (let i = 0, l = ghosts.length; i < l; ++i) {
-                g = ghosts[i];
-                r = g.sprite.lastRendered;
-                x =  g.time / this.TIME_OUT;
+                const g = ghosts[i];
+                const r = g.sprite.lastRendered;
+                const x = g.time / this.TIME_OUT;
                 oContext.globalAlpha = 1 - (x * x);
                 r.tileset
                     .drawTile(

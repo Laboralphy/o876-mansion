@@ -4,15 +4,15 @@ import CanvasHelper from "@/libs/canvas-helper";
 class Blindness extends AbstractFilter {
     _bInit: boolean;
     nTime: number;
-    oFlashCanvas: any;
-    oFlashContext: any;
+    oFlashCanvas: HTMLCanvasElement;
+    oFlashContext: CanvasRenderingContext2D;
 
     constructor() {
         super();
         this._bInit = false
     }
 
-    init(canvas) {
+    init(canvas: HTMLCanvasElement): void {
         this.oFlashCanvas = CanvasHelper.cloneCanvas(canvas)
         this.oFlashContext = this.oFlashCanvas.getContext('2d')
         this.oFlashContext.fillStyle = 'rgb(0, 0, 0)';
@@ -21,7 +21,7 @@ class Blindness extends AbstractFilter {
         this._bInit = true
     }
 
-    buildBlindness (canvas) {
+    buildBlindness (canvas: HTMLCanvasElement): void {
         const xGA = this.oFlashContext.globalAlpha;
         // Deg to rad
         const f = Math.sin(0.005 * this.elapsed + 3 * Math.PI / 2);
@@ -39,7 +39,7 @@ class Blindness extends AbstractFilter {
         this.oFlashContext.globalCompositeOperation = sGCO;
     }
 
-    render(canvas) {
+    render(canvas: HTMLCanvasElement): void {
         if (!this._bInit) {
             this.init(canvas)
         }

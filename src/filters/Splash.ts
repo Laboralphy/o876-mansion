@@ -5,25 +5,24 @@
  */
 import AbstractFilter from "@/libs/filters/AbstractFilter";
 
+type Photo = HTMLCanvasElement | HTMLImageElement;
+
+type Rect = { x: number, y: number, width: number, height: number };
+
 class Splash extends AbstractFilter {
-    aPhotos: any;
-    aText: any;
+    aPhotos: Photo[];
     nMaxSplash: number;
     nPhotoTime: number;
     nSplash: number;
-    oCanvas: any;
-    oEasingAlpha: any;
-    oPhoto: any;
-    oPhotoRect: any;
+    oCanvas: HTMLCanvasElement;
+    oPhoto: Photo;
+    oPhotoRect: Rect;
     sClass: string;
 
-    constructor(photos, nMaxSplash) {
+    constructor(photos?: Photo | Photo[], nMaxSplash?: number) {
         super();
         this.sClass = 'Splash';
         this.oCanvas = null;
-
-        this.aText = null;
-        this.oEasingAlpha = null;
 
         this.oPhoto = null;
         this.aPhotos = null;
@@ -44,7 +43,7 @@ class Splash extends AbstractFilter {
      * @param photos liste d'images à afficher
      * @param nMaxSplash nombre de sautillement d'image (pour chaque photo)
      */
-    splash(photos, nMaxSplash) {
+    splash(photos: Photo | Photo[], nMaxSplash?: number): void {
         if (nMaxSplash) {
             this.nMaxSplash = nMaxSplash;
         }
@@ -56,7 +55,7 @@ class Splash extends AbstractFilter {
         this.nextPhoto();
     }
 
-    nextPhoto() {
+    nextPhoto(): void {
         this.oPhoto = this.aPhotos.shift();
         if (this.oPhoto) {
             this.nPhotoTime = 0;
@@ -68,14 +67,14 @@ class Splash extends AbstractFilter {
 
     /** Fonction appelée par le gestionnaire d'effet pour recalculer l'état de l'effet
      */
-    process() {
+    process(): void {
         if (!this.oCanvas) {
             return;
         }
         if (!!this.oPhoto) {
             if (this.nPhotoTime <= 0) {
                 --this.nSplash;
-                const pr = {
+                const pr: Rect = {
                     x: 0,
                     y: 0,
                     width: this.oPhoto.width,
@@ -104,7 +103,7 @@ class Splash extends AbstractFilter {
 
     /** Fonction appelée par le gestionnaire d'effet pour le rendre à l'écran
      */
-    render(cvs) {
+    render(cvs: HTMLCanvasElement): void {
         if (!this.oCanvas) {
             this.oCanvas = cvs;
             return;

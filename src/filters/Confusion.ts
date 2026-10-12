@@ -6,8 +6,8 @@ import CanvasHelper from "@/libs/canvas-helper";
 
 class Confusion extends AbstractFilter {
     _bInit: boolean;
-    oConfCanvas: any;
-    oConfContext: any;
+    oConfCanvas: HTMLCanvasElement;
+    oConfContext: CanvasRenderingContext2D;
 
     constructor () {
         super()
@@ -16,7 +16,7 @@ class Confusion extends AbstractFilter {
         this._bInit = false
     }
 
-    init (canvas) {
+    init (canvas: HTMLCanvasElement): void {
         if (!this._bInit) {
             this.oConfCanvas = CanvasHelper.cloneCanvas(canvas)
             this.oConfContext = this.oConfCanvas.getContext('2d')
@@ -26,17 +26,17 @@ class Confusion extends AbstractFilter {
         }
     }
 
-    render (canvas) {
+    render (canvas: HTMLCanvasElement): void {
         this.init(canvas)
         this.buildConfusion(canvas)
         canvas.getContext('2d').drawImage(this.oConfCanvas, 0, 0)
     }
 
-    toRad (n) {
+    toRad (n: number): number {
         return n * 0.0174533
     }
 
-    buildConfusion (canvas) {
+    buildConfusion (canvas: HTMLCanvasElement): void {
         const nTime = this.elapsed >> 4
         const fx = Math.sin(this.toRad(nTime * 9.8)) + Math.sin(this.toRad(nTime * 4.77)) + 2;
         const fy = Math.sin(this.toRad(nTime * 4.1)) + Math.sin(this.toRad(nTime * 2.25)) + 2;

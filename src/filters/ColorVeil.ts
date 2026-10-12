@@ -21,12 +21,12 @@ class ColorVeil extends AbstractFilter {
     bInit: boolean;
     bOver: boolean;
     nEffectMask: number;
-    oCanvas: any;
-    oContext: any;
-    xStyle: any;
+    oCanvas: HTMLCanvasElement;
+    oContext: CanvasRenderingContext2D;
+    xStyle: CanvasGradient;
     xTo: number;
     yFrom: number;
-    yTo: any;
+    yTo: number;
 
     constructor () {
         super()
@@ -43,7 +43,7 @@ class ColorVeil extends AbstractFilter {
         this.bInit = false
     }
 
-    init (canvas) {
+    init (canvas: HTMLCanvasElement): void {
         if (!this.bInit) {
             this.bInit = true
             this.oCanvas = canvas
@@ -55,7 +55,7 @@ class ColorVeil extends AbstractFilter {
      * Défini l'effet sur SNARE
      * Construit un gradien inférieur vert
      */
-    setupSnare () {
+    setupSnare (): void {
         this.xStyle = this.oContext.createLinearGradient(0, this.oCanvas.height >> 1, 0, this.oCanvas.height - 1);
         this.xStyle.addColorStop(0, 'rgba(0, 64, 255, 0)');
         this.xStyle.addColorStop(1, 'rgba(0, 64, 255, 1)');
@@ -66,7 +66,7 @@ class ColorVeil extends AbstractFilter {
     /** Défini l'effet sur ROOT
      * Construit un gradient inférieur magenta
      */
-    setupRoot () {
+    setupRoot (): void {
         this.xStyle = this.oContext.createLinearGradient(0, this.oCanvas.height >> 1, 0, this.oCanvas.height - 1);
         this.xStyle.addColorStop(0, 'rgba(0, 220, 255, 0)');
         this.xStyle.addColorStop(1, 'rgba(0, 220, 255, 1)');
@@ -78,7 +78,7 @@ class ColorVeil extends AbstractFilter {
     /** Défini l'effet sur HOLD
      * Construit un calque coloré Bleu
      */
-    setupHold () {
+    setupHold (): void {
         this.xStyle = this.oContext.createLinearGradient(0, 0, this.oCanvas.width - 1, 0);
         this.xStyle.addColorStop(0.000, 'rgba(220, 220, 255, 0)');
         this.xStyle.addColorStop(0.125, 'rgba(220, 220, 255, 1)');
@@ -94,7 +94,7 @@ class ColorVeil extends AbstractFilter {
         this.bOver = false;
     }
 
-    setupReflect () {
+    setupReflect (): void {
         const w2 = this.oCanvas.width >> 1;
         const h2 = this.oCanvas.height >> 1;
         this.xStyle = this.oContext.createRadialGradient(w2, h2, h2 >> 2, w2, h2, w2);
@@ -104,7 +104,7 @@ class ColorVeil extends AbstractFilter {
         this.yTo = this.oCanvas.height;
     }
 
-    setupInvisible () {
+    setupInvisible (): void {
         const w2 = this.oCanvas.width >> 1;
         const h2 = this.oCanvas.height >> 1;
         this.xStyle = this.oContext.createRadialGradient(w2, h2, h2 >> 2, w2, h2, w2);
@@ -116,7 +116,7 @@ class ColorVeil extends AbstractFilter {
     }
 
 
-    setupVampyre () {
+    setupVampyre (): void {
         const w2 = this.oCanvas.width >> 1;
         const h2 = this.oCanvas.height >> 1;
         this.xStyle = this.oContext.createRadialGradient(w2, h2, h2 >> 2, w2, h2, w2);
@@ -127,7 +127,7 @@ class ColorVeil extends AbstractFilter {
         this.yTo = this.oCanvas.height;
     }
 
-    setupPower () {
+    setupPower (): void {
         const w2 = this.oCanvas.width >> 1;
         const h2 = this.oCanvas.height >> 1;
         this.xStyle = this.oContext.createRadialGradient(w2, h2, h2 >> 2, w2, h2, w2);
@@ -139,7 +139,7 @@ class ColorVeil extends AbstractFilter {
         this.yTo = this.oCanvas.height;
     }
 
-    setupWeakness () {
+    setupWeakness (): void {
         const w2 = this.oCanvas.width >> 1;
         const h2 = this.oCanvas.height >> 1;
         this.xStyle = this.oContext.createRadialGradient(w2, h2, h2 >> 2, w2, h2, w2);
@@ -155,7 +155,7 @@ class ColorVeil extends AbstractFilter {
      * Défini l'effet sur MAGNET
      * Construit un gradien inférieur gris
      */
-    setupMagnet () {
+    setupMagnet (): void {
         this.xStyle = this.oContext.createLinearGradient(0, this.oCanvas.height >> 1, 0, this.oCanvas.height - 1);
         this.xStyle.addColorStop(0, 'rgba(160, 160, 160, 0)');
         this.xStyle.addColorStop(1, 'rgba(160, 160, 160, 1)');
@@ -167,7 +167,7 @@ class ColorVeil extends AbstractFilter {
      * Défini l'effet sur MAGNET
      * Construit un gradien inférieur gris
      */
-    setupDefense () {
+    setupDefense (): void {
         this.xStyle = this.oContext.createLinearGradient(0, 0, this.oCanvas.width, this.oCanvas.height);
         this.xStyle.addColorStop(0, 'rgba(250, 250, 160, 1)');
         this.xStyle.addColorStop(0.4, 'rgba(250, 250, 160, 0)');
@@ -177,7 +177,7 @@ class ColorVeil extends AbstractFilter {
         this.yTo = this.oCanvas.height;
     }
 
-    render () {
+    render (): void {
         const f = this.oContext.globalAlpha;
         this.oContext.globalAlpha = Math.sin(0.1396264 * this.elapsed >> 3) / 5 + 0.444;
         this.oContext.fillStyle = this.xStyle;

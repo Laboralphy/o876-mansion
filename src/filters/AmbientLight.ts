@@ -1,6 +1,8 @@
 import AbstractFilter from "@/libs/filters/AbstractFilter";
 import CanvasHelper from "@/libs/canvas-helper";
 import Easing from "@/libs/easing";
+import type { Renderer } from "@laboralphy/raycaster386";
+import type Engine from "@/engine/Engine";
 
 /** Effet graphique temporisé
  * O876 Raycaster project
@@ -13,19 +15,19 @@ import Easing from "@/libs/easing";
  */
 class AmbientLight extends AbstractFilter {
     _oEasing: Easing;
-    _rc: any;
-    _timeFactor: any;
+    _rc: Renderer;
+    _timeFactor: number;
 
     constructor ({
         engine
-    }) {
+    }: { engine: Engine }) {
         super()
         this._oEasing = new Easing()
         this._rc = engine.raycaster
         this._timeFactor = engine._TIME_INTERVAL
     }
 
-    setLight (nLight, t) {
+    setLight (nLight: number, t: number): void {
         if (nLight > 0 && t > 0) { // was "x > 0" : "x" was undefined
             this._oEasing
                 .from(this._rc.shadingFactor)
@@ -35,7 +37,7 @@ class AmbientLight extends AbstractFilter {
         }
     }
 
-    process () {
+    process (): void {
         const e = this._oEasing
         e.compute()
         if (e.over()) {
@@ -43,7 +45,7 @@ class AmbientLight extends AbstractFilter {
         }
     }
 
-    render (canvas) {
+    render (canvas: HTMLCanvasElement): void {
         const x = this._oEasing.x;
         if (x > 0) {
             const rc = this._rc;

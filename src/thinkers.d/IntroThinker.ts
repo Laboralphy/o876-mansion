@@ -111,7 +111,7 @@ class IntroThinker extends Thinker {
             }
             const oText = new SimpleText();
             const cvs = engine.getRenderingCanvas();
-            oText.text(i18n.t(sKey, { returnObjects: true }), cvs.width >> 1, cvs.height >> 1);
+            oText.text(i18n.t(sKey, { returnObjects: true }) as string[], cvs.width >> 1, cvs.height >> 1);
             return Promise.resolve(oText);
         };
         const buildSplashFilter = async ({photos, loops}: any) => {

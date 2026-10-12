@@ -32,7 +32,7 @@ npx vue-tsc --noEmit --noImplicitAny
 | [x] | Step 2 — engine (compat layer over raycaster386) | 14 | 52 | 68 |
 | [x] | Step 3 — stores | 5 | 43 | 56 |
 | [x] | Step 4 — game core classes | 8 | 96 | 171 |
-| [ ] | Step 5 — game visual filters | 12 | 39 | 63 |
+| [x] | Step 5 — game visual filters | 12 | 39 | 63 |
 | [ ] | Step 6 — thinkers (AI) | 6 | 37 | 44 |
 | [ ] | Step 7 — scripts | 40 | 56 | 205 |
 | [ ] | Step 8 — Vue components | 9 | 22 | 23 |
@@ -42,6 +42,7 @@ npx vue-tsc --noEmit --noImplicitAny
 **Remaining after step 2 : 532.**
 **Remaining after step 3 : 472.**
 **Remaining after step 4 : 322.**
+**Remaining after step 5 : 264.**
 
 ### Explicit `any`
 
@@ -57,6 +58,7 @@ grep -rnoE ':\s*any\b|as any\b|<any>|any\[\]' src --include=*.ts --include=*.vue
 | step 2 | 88 — none left in `src/engine`, only `src/libs/events.ts` in `src/libs` |
 | step 3 | 75 — none left in `src/stores`, `StoreAbstract.ts`, `UI.ts`, `Album.ts`, `Logic.ts` |
 | step 4 | 59 — none left in `src/*.ts` nor `src/data` : only `src/filters` (42), `src/thinkers.d` (14), `src/libs/events.ts` (3) |
+| step 5 | 17 — none left in `src/filters` : only `src/thinkers.d` (14), `src/libs/events.ts` (3) |
 
 `libs/events.ts` keeps `(...args: any[])` on purpose : it is what lets listeners destructure their payload
 (`.on('x', ({a, b}) => ...)`). Removing it requires a typed event map per emitter.
@@ -82,11 +84,11 @@ Shared types available for the next steps :
   - `AudioManager.ts` : `LoadedSound`, `PlayingSound`, `SoundOptions`, `AudioManagerState`
   - `SenseMap.ts` : `SenseMapState` ; stores export `AlbumState`, `LogicState`
 
-## Where we stopped (2026-10-08)
+## Where we stopped (2026-10-11)
 
 Steps 1 and 2 are done and committed (`8535bbc` Typing function I, `aadb5c9` Typing function II).
-Steps 3 and 4 are done (not committed yet). `vue-tsc --noEmit` and `npm run build` are clean.
-Counts : **322** untyped parameters, **59** explicit `any`.
+Steps 3 and 4 are done and committed (`e3559fa` Typing function III, `a22d301`). Step 5 is done (not committed yet).
+`vue-tsc --noEmit` and `npm run build` are clean. Counts : **264** untyped parameters, **17** explicit `any`.
 
 Goal : not only reach 0 untyped parameters, but eradicate as many explicit `any` as possible along the way
 (replace each `any` field of a touched class by its real type).
@@ -127,10 +129,23 @@ Goal : not only reach 0 untyped parameters, but eradicate as many explicit `any`
   - `Game.applyDecal` uses `tileset.getImage()`, the whole shaded atlas, which is `null` for unshaded (light source)
     tilesets. Same behaviour as the original engine ; only reached through decal state replay, nothing calls it.
 
-### Next : step 5 — game visual filters (58 parameters)
+### Step 5 notes
 
-`PhotoMogrify.ts` (23), `CameraObscura.ts` (6), `SimpleText.ts` (6), `Splash.ts` (5)... `src/filters` also holds
-42 of the remaining 59 explicit `any`.
+- New types : `EnergyData` (`CameraObscura`, the HUD energy circle), `PhotoMogrifyOptions`, `ScreamingGhost`,
+  `TextInput` (`SimpleText`), `Photo` / `Rect` (`Splash`), `MogrifyRegistry`, `Spot`.
+- `Splash` : the unused `aText` and `oEasingAlpha` fields were removed.
+- `SimpleText` set `ctx.textBaseLine` (capital L, not a canvas property) : the line never had any effect and was
+  removed, so rendering is unchanged. If the intent was really `textBaseline = 'middle'`, the intro story text
+  would move up by about half a line : to decide by looking at it in game.
+- `IntroThinker` : `i18n.t(key, {returnObjects: true}) as string[]` (i18next types object results loosely).
+- `AmbientLight` and `ColorVeil` are typed but never instantiated : candidates for removal.
+- `CameraObscura.render()` reads `CanvasHelper.getImageSmoothing(canvas)` into `bIS` but never restores it
+  (it always ends with smoothing off). Not changed.
+
+### Next : step 6 — thinkers (AI)
+
+Start with the pending `LinearBoltThinker.fire()` decision below. `src/thinkers.d` also holds 14 of the 17
+remaining explicit `any`.
 
 ### Pending decision : `LinearBoltThinker.fire()` (step 6)
 
