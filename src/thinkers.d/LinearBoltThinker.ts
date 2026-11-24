@@ -2,29 +2,35 @@ import MissileThinker from "@/engine/thinkers/MissileThinker";
 import Blindness from "@/filters/Blindness";
 import Timed from "@/engine/filters/Timed";
 import Confusion from "@/filters/Confusion";
+import type Entity from "@/engine/Entity";
+import type { MissileData } from "@/data/types";
 
 const DEFAULT_MISSILE_SPEED = 10
 const DEFAULT_MISSILE_EFFECT = 'damage'
 const DEFAULT_MISSILE_EFFECT_DURATION = 3000
 
 class LinearBoltThinker extends MissileThinker {
-    _missileData: any;
-    _owner: any;
+    _missileData: MissileData;
 
-    fire(owner, missileData) {
+    /**
+     * Configures the bolt with the ghost missile data, then fires it
+     * @param owner entity that shoots the bolt
+     * @param missileData missile definition (data/ghosts)
+     */
+    launch(owner: Entity, missileData: MissileData): void {
         this._missileData = missileData
         const missile = this.entity;
         missile.sprite.setCurrentAnimation('fly');
-        super.fire(owner, this._missileData.speed || DEFAULT_MISSILE_SPEED);
+        this.fire(owner, this._missileData.speed || DEFAULT_MISSILE_SPEED);
     }
 
-    applyDamage (entity, nMult = 1) {
+    applyDamage (entity: Entity, nMult: number = 1): void {
         if (nMult > 0) {
             this.context.game.commitGhostAttack(this._owner, entity, nMult)
         }
     }
 
-    applyBlindness (entity) {
+    applyBlindness (entity: Entity): void {
         // rechercher s'il existe déja un blindness
         const aPrevBlindFilters = this.engine.filters.filters.filter(f => (f instanceof Timed) && f.child instanceof Blindness)
         aPrevBlindFilters.forEach(f => f.terminate())
@@ -33,7 +39,7 @@ class LinearBoltThinker extends MissileThinker {
         this.engine.filters.link(oTime)
     }
 
-    applyConfusion (entity) {
+    applyConfusion (entity: Entity): void {
         const aPrevConfFilters = this.engine.filters.filters.filter(f => (f instanceof Timed) && f.child instanceof Confusion)
         aPrevConfFilters.forEach(f => f.terminate())
         const oConf = new Confusion()
@@ -41,7 +47,7 @@ class LinearBoltThinker extends MissileThinker {
         this.engine.filters.link(oTime)
     }
 
-    applyEffect (entity) {
+    applyEffect (entity: Entity): void {
         const sEffect = this._missileData.effect || DEFAULT_MISSILE_EFFECT
         switch (sEffect) {
             case 'damage': {
@@ -61,7 +67,7 @@ class LinearBoltThinker extends MissileThinker {
         }
     }
 
-    $setExplosionAnimation() {
+    $setExplosionAnimation(): void {
         this.entity.sprite.setCurrentAnimation('explode', 0);
         const aEntities = this.getCollidingEntities()
         if (Array.isArray(aEntities)) {

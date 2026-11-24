@@ -9,13 +9,25 @@ import Splash from "@/filters/Splash";
 import CanvasHelper from "@/libs/canvas-helper";
 import AbstractFilter from "@/libs/filters/AbstractFilter";
 
+/**
+ * One step of the intro story : a text, or a slideshow of photos
+ */
+type StoryStep =
+    { type: 'text', text: string } |
+    { type: 'splash', photos: string[], loops: number };
+
+/**
+ * Transitions of the intro, state by state : [test, state, ...next states]
+ */
+type IntroTransitions = Record<string, Array<Array<string | number>>>;
+
 class IntroThinker extends Thinker {
     _cinemascope: CinemaScope;
     _easing: Easing;
     _escapeHit: boolean;
     _fadeOut: FadeOut;
-    _storyFilter: any;
-    transitions: any;
+    _storyFilter: Link | null;
+    transitions: IntroTransitions;
 
     constructor() {
         super();
@@ -38,16 +50,16 @@ class IntroThinker extends Thinker {
         this.automaton.state = 's_init';
     }
 
-    displayStory(t?) {
+    displayStory(): void {
         const engine = this.context.game.engine;
         engine
             .filters
             .link(this._storyFilter);
     }
 
-    async composeStory() {
+    async composeStory(): Promise<AbstractFilter[]> {
         const engine = this.engine;
-        const storyMap = [
+        const storyMap: StoryStep[] = [
             {
                 "type": "text",
                 "text": "arrival"
@@ -104,7 +116,7 @@ class IntroThinker extends Thinker {
                 "text": "phat_loot"
             }
         ];
-        const buildTextFilter = data => {
+        const buildTextFilter = (data: { text: string }): Promise<SimpleText> => {
             const sKey = 'PLOT_STRUCT.' + data.text;
             if (!i18n.exists(sKey)) {
                 throw new Error('this resource string does not exist : ' + data.text);
@@ -114,7 +126,7 @@ class IntroThinker extends Thinker {
             oText.text(i18n.t(sKey, { returnObjects: true }) as string[], cvs.width >> 1, cvs.height >> 1);
             return Promise.resolve(oText);
         };
-        const buildSplashFilter = async ({photos, loops}: any) => {
+        const buildSplashFilter = async ({photos, loops}: { photos: string[], loops: number }): Promise<Splash | undefined> => {
             try {
                 const promPhotos = photos.map(p => CanvasHelper.loadCanvas('assets/splashes/intro/' + p));
                 const aResolvedPhotos = await Promise.all(promPhotos);
@@ -135,13 +147,13 @@ class IntroThinker extends Thinker {
                     return buildSplashFilter(data);
 
                 default:
-                    throw new Error('unknown intro verb: ' + data.type + ' need [text, splash]');
+                    throw new Error('unknown intro verb: ' + (data as { type: string }).type + ' need [text, splash]');
             }
         });
         return Promise.all(promStory);
     }
 
-    keyDown(key) {
+    keyDown(key: string): void {
         switch (key) {
             case 'Escape':
                 this._escapeHit = true;

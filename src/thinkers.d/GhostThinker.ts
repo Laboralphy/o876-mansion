@@ -3,7 +3,15 @@ import * as RC_CONSTS from "@/engine/consts";
 import * as CONSTS from "@/consts";
 import Geometry from "@/libs/geometry";
 import { bresenhamLine } from "@laboralphy/raycaster386";
-import Easing from "@/libs/easing";
+import type Entity from "@/engine/Entity";
+import type Vector from "@/libs/geometry/Vector";
+
+/**
+ * Data of an automaton state that has a timer (see setTimeOut / isTimeOut)
+ */
+export interface TimeOutData {
+    timeOut?: number;
+}
 
 const PULSE_MAP = [2 ,3, 4, 3];
 
@@ -12,8 +20,7 @@ class GhostThinker extends MoverThinker {
     _nOpacity: number;
     _nTime: number;
     _nTimeOut: number;
-    _speed: any;
-    _target: any;
+    _target: Entity;
 
     constructor() {
         super();
@@ -45,18 +52,18 @@ class GhostThinker extends MoverThinker {
         this.automaton.initialState = 'spawn'
     }
 
-    get target() {
+    get target(): Entity {
         return this._target;
     }
 
-    set target(value) {
+    set target(value: Entity) {
         this._target = value;
     }
 
     /**
      * Sets sprites flag according to opacity level
      */
-    setOpacityFlags() {
+    setOpacityFlags(): void {
         const sprite = this.entity.sprite;
         switch (Math.floor(this._nOpacity)) {
             case 0:
@@ -92,13 +99,13 @@ class GhostThinker extends MoverThinker {
     /**
      * makes the ghost pulse
      */
-    pulse() {
+    pulse(): void {
         ++this._nTime;
         this._nOpacity = PULSE_MAP[(this._nTime >> 1) & 3];
         this.setOpacityFlags();
     }
 
-    vectorToTarget() {
+    vectorToTarget(): Vector {
         const oGhost = this.entity;
         const oTarget = this.target;
         const vGhostPos = oGhost.position;
@@ -109,7 +116,7 @@ class GhostThinker extends MoverThinker {
     /**
      * sets the moving angle, so the ghost may chase the target
      */
-    lookAtTarget() {
+    lookAtTarget(): void {
         this.entity.position.angle = this.vectorToTarget().angle();
     }
 
@@ -118,7 +125,7 @@ class GhostThinker extends MoverThinker {
      * @param fSpeedMod {number} speed modifier (scale)
      * @param fAngleMod {number}
      */
-    moveTowardTarget(fSpeedMod = 1, fAngleMod = 0) {
+    moveTowardTarget(fSpeedMod: number = 1, fAngleMod: number = 0): void {
         this.lookAtTarget();
         const ms = this.entity.data.speed * fSpeedMod;
         const a = this.entity.position.angle + fAngleMod;
@@ -128,7 +135,7 @@ class GhostThinker extends MoverThinker {
         );
     }
 
-    moveAwayFromTarget(ms) {
+    moveAwayFromTarget(ms: number): void {
         this.lookAtTarget();
         const a = this.entity.position.angle;
         this.setSpeed(
@@ -139,17 +146,17 @@ class GhostThinker extends MoverThinker {
     /**
      * get the distance beetwen target and ghost
      */
-    getDistanceToTarget() {
+    getDistanceToTarget(): number {
         return this.vectorToTarget().length();
     }
 
-    $move() {
+    $move(): void {
         this.pulse();
         this.updateVisibilityData();
         super.$move();
     }
 
-    rebuke() {
+    rebuke(): void {
         this.pulse();
         let m = this.entity;
         m.inertia.set(0, 0);
@@ -159,19 +166,19 @@ class GhostThinker extends MoverThinker {
 
     /**
      * définit le timer de l'état automate spécifié
-     * @param n {number}
-     * @param scd {{timeOut: number}}
+     * @param scd automaton state data
+     * @param n delay (ms)
      */
-    setTimeOut(scd, n) {
+    setTimeOut(scd: TimeOutData, n: number): void {
         scd.timeOut = this.engine.getTime() + n;
     }
 
     /**
      * renvoie true si le timer interne de l'etat automate spécifié est dépassé
      * @return {boolean}
-     * @param scd {{timeOut: number}}
+     * @param scd automaton state data
      */
-    isTimeOut(scd) {
+    isTimeOut(scd: TimeOutData): boolean {
         const nEngineTime = this.engine.getTime()
         const nTimeOut = scd.timeOut || Infinity
         return nTimeOut <= nEngineTime
@@ -181,7 +188,7 @@ class GhostThinker extends MoverThinker {
      * Updates ghost visibility data
      * That means, all data aimed at resolving how many energy a ghost worth
      */
-    updateVisibilityData() {
+    updateVisibilityData(): void {
         const entity = this.entity;
         if (!('visibility' in entity.data)) {
             entity.data.visibility = {
@@ -209,11 +216,11 @@ class GhostThinker extends MoverThinker {
         vis.size = r.dw;
     }
 
-    testSolid(x, y) {
-    return !this.testWalkable(x, y);
+    testSolid(x: number, y: number): boolean {
+        return !this.testWalkable(x, y);
     }
 
-    testWalkable(x, y) {
+    testWalkable(x: number, y: number): boolean {
         const c = this.context.game.engine.getCellType(x, y);
         return c === RC_CONSTS.PHYS_NONE;
     }
@@ -230,7 +237,7 @@ class GhostThinker extends MoverThinker {
      * @param oTarget cible qu'on cherche à voir
      * @return boolean
      */
-    isEntityVisible(oTarget) {
+    isEntityVisible(oTarget: Entity): boolean {
         const oMe = this.entity;
         const xMe = oMe.sector.x;
         const yMe = oMe.sector.y;
@@ -251,10 +258,10 @@ class GhostThinker extends MoverThinker {
     ////// STATES ////// STATES ////// STATES ////// STATES ////// STATES ////// STATES ////// STATES //////
     ////// STATES ////// STATES ////// STATES ////// STATES ////// STATES ////// STATES ////// STATES //////
 
-    $init() {
+    $init(): void {
     }
 
-    $spawn() {
+    $spawn(): void {
         // décider de la marche à suivre
         // un spectre va toujours se déplacer en ligne droite, ou bien rester immobile
         // - déterminer le point d'apparition et le point de destination
@@ -270,7 +277,7 @@ class GhostThinker extends MoverThinker {
     /**
      * The ghost is spawning, the alpha prop is increasing
      */
-    $incAlphaToFull() {
+    $incAlphaToFull(): void {
         this._nOpacity += 0.5;
         this.setOpacityFlags();
     }
@@ -278,7 +285,7 @@ class GhostThinker extends MoverThinker {
     /**
      * The ghost is vanishing
      */
-    $decAlphaToZero() {
+    $decAlphaToZero(): void {
         this._nOpacity -= 0.5;
         this.setOpacityFlags();
     }
@@ -286,14 +293,14 @@ class GhostThinker extends MoverThinker {
     /**
      * The ghost will cease to exist
      */
-    $dead() {
+    $dead(): void {
         if (!this.entity.dead) {
             this.entity.dead = true;
         }
     }
 
-    $setTimeOut(n) {
-        this.setTimeOut(this.automaton.currentStateContext.data, n)
+    $setTimeOut(n: number): void {
+        this.setTimeOut(this.automaton.currentStateContext.data as TimeOutData, n)
     }
 
     ////// TRANSITIONS ////// TRANSITIONS ////// TRANSITIONS ////// TRANSITIONS ////// TRANSITIONS //////
@@ -304,11 +311,11 @@ class GhostThinker extends MoverThinker {
      * tests if sprite has reach full opacity
      * @returns {boolean}
      */
-    $isAlphaFull() {
+    $isAlphaFull(): boolean {
         return this._nOpacity >= 4;
     }
 
-    $isAlphaZero() {
+    $isAlphaZero(): boolean {
         return this._nOpacity <= 0;
     }
 
@@ -316,8 +323,8 @@ class GhostThinker extends MoverThinker {
      * returns true if the time is out
      * @returns {boolean}
      */
-    $isTimeOut() {
-        return this.isTimeOut(this.automaton.currentStateContext.data)
+    $isTimeOut(): boolean {
+        return this.isTimeOut(this.automaton.currentStateContext.data as TimeOutData)
     }
 }
 

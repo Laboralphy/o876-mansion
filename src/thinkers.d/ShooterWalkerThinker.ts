@@ -1,5 +1,6 @@
 import VengefulThinker from "@/thinkers.d/VengefulThinker";
 import LinearBoltThinker from "@/thinkers.d/LinearBoltThinker";
+import type { MissileData } from "@/data/types";
 
 /**
  * 1) Le fantôme se dirige en ligne droite vers sa cible, pendant 3 secondes, si la cible se déplace, le fantôme
@@ -50,15 +51,16 @@ class ShooterWalkerThinker extends VengefulThinker {
     ////// STATES ////// STATES ////// STATES ////// STATES ////// STATES ////// STATES ////// STATES //////
     ////// STATES ////// STATES ////// STATES ////// STATES ////// STATES ////// STATES ////// STATES //////
 
-    $shoot() {
+    $shoot(): void {
         this.moveTowardTarget(0, 0);
         // tirer un projectile
-        const oMissileData = Array.isArray(this.entity.data.missile)
-            ? this.entity.data.missile[Math.floor(Math.random() * this.entity.data.missile.length)]
-            : this.entity.data.missile
+        const missiles: MissileData[] | MissileData = this.entity.data.missile
+        const oMissileData = Array.isArray(missiles)
+            ? missiles[Math.floor(Math.random() * missiles.length)]
+            : missiles
         const sMissileResRef = oMissileData.resref
         const missile = this.engine.createEntity(sMissileResRef, this.entity.position);
-        (missile.thinker as LinearBoltThinker).fire(this.entity, oMissileData);
+        (missile.thinker as LinearBoltThinker).launch(this.entity, oMissileData);
     }
 }
 

@@ -1,22 +1,23 @@
 import LinearBoltThinker from "@/thinkers.d/LinearBoltThinker";
+import type GhostThinker from "@/thinkers.d/GhostThinker";
+import type Vector from "@/libs/geometry/Vector";
 
 class HomingBoltThinker extends LinearBoltThinker {
     ANGLE_TURNING: number;
-    _owner: any;
 
     constructor () {
         super()
         this.ANGLE_TURNING = 0.05
     }
 
-    $move() {
+    $move(): void {
         super.$move()
         const nAngle = this.vectorToTarget().angle()
         // essayer de reduire cet angle
         this.setAngle(this.getAngleToTarget(nAngle))
     }
 
-    getAngleToTarget(fTarget) {
+    getAngleToTarget(fTarget: number): number {
         const m = this.entity;
         let fMe = m.position.angle;
         while (fTarget < 0) {
@@ -37,10 +38,10 @@ class HomingBoltThinker extends LinearBoltThinker {
         return fMe
     }
 
-    vectorToTarget() {
+    vectorToTarget(): Vector {
         const oSelf = this.entity;
         const oOwner = this._owner
-        const oTarget = oOwner.thinker.target
+        const oTarget = (oOwner.thinker as GhostThinker).target
         const vSelf = oSelf.position
         const vTarget = oTarget.position
         return vTarget.vector().sub(vSelf.vector());

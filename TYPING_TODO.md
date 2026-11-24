@@ -33,7 +33,7 @@ npx vue-tsc --noEmit --noImplicitAny
 | [x] | Step 3 — stores | 5 | 43 | 56 |
 | [x] | Step 4 — game core classes | 8 | 96 | 171 |
 | [x] | Step 5 — game visual filters | 12 | 39 | 63 |
-| [ ] | Step 6 — thinkers (AI) | 6 | 37 | 44 |
+| [x] | Step 6 — thinkers (AI) | 6 | 37 | 44 |
 | [ ] | Step 7 — scripts | 40 | 56 | 205 |
 | [ ] | Step 8 — Vue components | 9 | 22 | 23 |
 | | **total** | | **460** | **849** |
@@ -43,6 +43,7 @@ npx vue-tsc --noEmit --noImplicitAny
 **Remaining after step 3 : 472.**
 **Remaining after step 4 : 322.**
 **Remaining after step 5 : 264.**
+**Remaining after step 6 : 228.**
 
 ### Explicit `any`
 
@@ -59,6 +60,7 @@ grep -rnoE ':\s*any\b|as any\b|<any>|any\[\]' src --include=*.ts --include=*.vue
 | step 3 | 75 — none left in `src/stores`, `StoreAbstract.ts`, `UI.ts`, `Album.ts`, `Logic.ts` |
 | step 4 | 59 — none left in `src/*.ts` nor `src/data` : only `src/filters` (42), `src/thinkers.d` (14), `src/libs/events.ts` (3) |
 | step 5 | 17 — none left in `src/filters` : only `src/thinkers.d` (14), `src/libs/events.ts` (3) |
+| step 6 | 3 — only `src/libs/events.ts` (on purpose, see below) |
 
 `libs/events.ts` keeps `(...args: any[])` on purpose : it is what lets listeners destructure their payload
 (`.on('x', ({a, b}) => ...)`). Removing it requires a typed event map per emitter.
@@ -83,12 +85,15 @@ Shared types available for the next steps :
   - `Visor.ts` : `GhostVisibility` (shape of `entity.data.visibility`, for `GhostThinker`), `GhostScore`, `CameraEnergyUpdate`
   - `AudioManager.ts` : `LoadedSound`, `PlayingSound`, `SoundOptions`, `AudioManagerState`
   - `SenseMap.ts` : `SenseMapState` ; stores export `AlbumState`, `LogicState`
+- thinkers (step 6) : `TimeOutData` (`GhostThinker.ts`, data of an automaton state with a timer),
+  `LinearBoltThinker.launch(owner, missileData)`
 
 ## Where we stopped (2026-10-11)
 
 Steps 1 and 2 are done and committed (`8535bbc` Typing function I, `aadb5c9` Typing function II).
-Steps 3 and 4 are done and committed (`e3559fa` Typing function III, `a22d301`). Step 5 is done (not committed yet).
-`vue-tsc --noEmit` and `npm run build` are clean. Counts : **264** untyped parameters, **17** explicit `any`.
+Steps 3 and 4 are done and committed (`e3559fa` Typing function III, `a22d301`). Step 5 is committed (`c387f1f`).
+Step 6 is done (not committed yet).
+`vue-tsc --noEmit` and `npm run build` are clean. Counts : **228** untyped parameters, **3** explicit `any`.
 
 Goal : not only reach 0 untyped parameters, but eradicate as many explicit `any` as possible along the way
 (replace each `any` field of a touched class by its real type).
@@ -142,27 +147,25 @@ Goal : not only reach 0 untyped parameters, but eradicate as many explicit `any`
 - `CameraObscura.render()` reads `CanvasHelper.getImageSmoothing(canvas)` into `bIS` but never restores it
   (it always ends with smoothing off). Not changed.
 
-### Next : step 6 — thinkers (AI)
+### Step 6 notes
 
-Start with the pending `LinearBoltThinker.fire()` decision below. `src/thinkers.d` also holds 14 of the 17
-remaining explicit `any`.
+- `LinearBoltThinker.fire(owner, missileData)` overrode the engine `MissileThinker.fire(owner, speed: number)`
+  with an incompatible signature : renamed `launch(owner: Entity, missileData: MissileData)`, which configures
+  the bolt then calls the (no longer overridden) engine `fire()`. Callers : `VengefulThinker.$shoot`,
+  `ShooterWalkerThinker.$shoot`.
+- Removed field redeclarations typed `any` that hid the real types of the base classes : `_owner` (Linear/HomingBolt,
+  `Entity`), `_speed` (GhostThinker, `Vector`), `_cwc` / `_nOpacity` (VengefulThinker), `SPEED` (PlayerThinker).
+- `GhostThinker` : unused `Easing` import removed. `IntroThinker.displayStory(t?)` : unused parameter removed.
+- `IntroThinker` : the story map is typed (`StoryStep`) ; `transitions` (`IntroTransitions`) is never read by anyone
+  (legacy of the old automaton) : candidate for removal.
+- `ShooterWalkerThinker.$shoot` is an exact copy of the inherited `VengefulThinker.$shoot` : candidate for removal.
+- Still a hidden `any` the grep count misses : `Entity.data: Record<string, any>` (`entity.data.missile`, `.speed`,
+  `.visibility`, `.wraith`...). Typing it needs a per-kind data shape (ghost, wraith, player).
 
-### Pending decision : `LinearBoltThinker.fire()` (step 6)
+### Next : step 7 — scripts
 
-`LinearBoltThinker.fire(owner, missileData)` overrides the engine's `MissileThinker.fire(owner, speed: number)`
-with an incompatible second parameter : TypeScript will reject it once thinker parameters are typed.
-
-Proposal (not applied yet, waiting for approval) :
-- rename the game method to `launch(owner: Entity, missileData: MissileData)` : it configures the bolt
-  (data, `fly` animation) then calls the engine's `this.fire(owner, speed)`, which is no longer overridden ;
-- declare `MissileData { resref: string, speed?, effect?: 'damage' | 'blindness' | 'confusion', duration?, damage? }`
-  (shape of the `"missile"` entries of `data/ghosts.json` : `null`, one object, or an array) ;
-- callers : `ShooterWalkerThinker.$shoot` and `VengefulThinker.$shoot` (`.fire(` → `.launch(`) ;
-- remove the `_owner: any` redeclarations in `LinearBoltThinker` / `HomingBoltThinker` (they hide `Entity`) ;
-- `HomingBoltThinker.vectorToTarget()` : `(oOwner.thinker as GhostThinker).target`.
-
-Rejected alternatives : an options object in the engine `fire()` (only typechecks through method parameter
-bivariance, and leaks game data into the engine) ; setting `_missileData` before `fire()` (order-dependent).
+All scripts share the `(game, remove, x, y, ...args)` signature : start with one shared script type.
+Also pending for this step : the `locator.ts` angle conversion and the `any` in `scripts.ts` (see step 4 notes).
 
 ### To test in game (behavior changed in step 2)
 

@@ -8,7 +8,7 @@ import Geometry from "@/libs/geometry";
  * Le thinker va faire bouger une apparition en ligne droite entre deux locators pendant un temps donné
  */
 class WraithThinker extends GhostThinker {
-    _easing: any;
+    _easing: { x: Easing, y: Easing };
     _startMoveTime: number;
 
     constructor() {
@@ -37,11 +37,11 @@ class WraithThinker extends GhostThinker {
     ////// STATES ////// STATES ////// STATES ////// STATES ////// STATES ////// STATES ////// STATES //////
     ////// STATES ////// STATES ////// STATES ////// STATES ////// STATES ////// STATES ////// STATES //////
     ////// STATES ////// STATES ////// STATES ////// STATES ////// STATES ////// STATES ////// STATES //////
-    $startTimer() {
+    $startTimer(): void {
         this._startMoveTime = this.elapsedTime
     }
 
-    $spawn() {
+    $spawn(): void {
         // décider de la marche à suivre
         // un spectre va toujours se déplacer en ligne droite, ou bien rester immobile
         // - déterminer le point d'apparition et le point de destination
@@ -70,7 +70,7 @@ class WraithThinker extends GhostThinker {
     /**
      * The ghost is pulsating and walking to its destination
      */
-    $moveAndPulse() {
+    $moveAndPulse(): void {
         // displacement
         const entity = this.entity;
         const t = this.elapsedTime - this._startMoveTime;
@@ -86,11 +86,11 @@ class WraithThinker extends GhostThinker {
     ////// TRANSITIONS ////// TRANSITIONS ////// TRANSITIONS ////// TRANSITIONS ////// TRANSITIONS //////
 
 
-    $hasArrived() {
+    $hasArrived(): boolean {
         return this._easing.x.over() && this._easing.y.over();
     }
 
-    $isShot() {
+    $isShot(): boolean {
         return !!this.entity.data.shot;
     }
 }

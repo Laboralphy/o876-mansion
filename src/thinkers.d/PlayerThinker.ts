@@ -2,12 +2,12 @@ import FPSControlThinker from "@/engine/thinkers/FPSControlThinker";
 import * as CONSTS from "@/consts";
 import Easing from "@/libs/easing";
 import Geometry from "@/libs/geometry";
+import type Entity from "@/engine/Entity";
 
 const Z_FLOOR_LEVEL = 1.75;
 
 class PlayerThinker extends FPSControlThinker {
-    SPEED: any;
-    _easingForcedAngle: any;
+    _easingForcedAngle: Easing | null;
     _nDeathZSpeed: number;
 
     constructor() {
@@ -34,18 +34,18 @@ class PlayerThinker extends FPSControlThinker {
      * @param x
      * @param y
      */
-    useBlock(x, y) {
+    useBlock(x: number, y: number): void {
         if (!this.entity.data.camera) {
             // push blocks only if visor is dropped
             this.engine.pushCell(this.entity, x, y);
         }
     }
 
-    setWalkingSpeed(n) {
+    setWalkingSpeed(n: number): void {
         this.SPEED = n;
     }
 
-    $init() {
+    $init(): void {
         super.$init();
         this.entity.dummy.tangibility.self = CONSTS.TANGIBILITY_PLAYER;
         this.entity.dummy.tangibility.hitmask = CONSTS.TANGIBILITY_GHOST;
@@ -55,7 +55,7 @@ class PlayerThinker extends FPSControlThinker {
      * Un fantome menace.
      * Tourner l'angle de vue vers le fantome
      */
-    ghostThreat(oGhost) {
+    ghostThreat(oGhost: Entity): void {
         const fAngle = this.computeAngleToMobile(oGhost);
         this.forceAngle(fAngle);
     }
@@ -63,14 +63,14 @@ class PlayerThinker extends FPSControlThinker {
     /**
      * Compute the angle between The Mobile Heading and another Mobile
      */
-    computeAngleToMobile(t) {
+    computeAngleToMobile(t: Entity): number {
         const pMe = this.entity.position;
         const pTarget = t.position;
         // return Math.atan2(pTarget.y - pMe.y, pTarget.x - pMe.x);
         return Geometry.angle(pMe.x, pMe.y, pTarget.x, pTarget.y)
     }
 
-    forceAngle(fTarget) {
+    forceAngle(fTarget: number): void {
         const m = this.entity;
         let fMe = m.position.angle;
         while (fTarget < 0) {
@@ -88,7 +88,7 @@ class PlayerThinker extends FPSControlThinker {
         this._easingForcedAngle = e;
     }
 
-    processAngle() {
+    processAngle(): void {
         if (this._easingForcedAngle) {
             this.entity.position.angle = this._easingForcedAngle.compute().y;
             if (this._easingForcedAngle.over()) {
@@ -97,13 +97,13 @@ class PlayerThinker extends FPSControlThinker {
         }
     }
 
-    look(x) {
+    look(x: number): void {
         if (!this._easingForcedAngle) {
             super.look(x);
         }
     }
 
-    computeAngleSpeed(nTime) {
+    computeAngleSpeed(nTime: number): number {
         if (!this._easingForcedAngle) {
             return super.computeAngleSpeed(nTime);
         } else {
@@ -111,13 +111,13 @@ class PlayerThinker extends FPSControlThinker {
         }
     }
 
-    think() {
+    think(): void {
         this.processAngle();
         super.think();
         this.context.game._audioManager.setListeningEntity(this.entity.position)
     }
 
-    kill() {
+    kill(): void {
         this.automaton.state = "dying";
         this._nDeathZSpeed = 0;
     }
@@ -126,11 +126,11 @@ class PlayerThinker extends FPSControlThinker {
      * Returns true if the player point of view is at floor level = dead
      * @return boolean
      */
-    isHeightAtFloorLevel() {
+    isHeightAtFloorLevel(): boolean {
         return this.entity.position.z > Z_FLOOR_LEVEL;
     }
 
-    $dyingAnimation() {
+    $dyingAnimation(): void {
         if (this.isHeightAtFloorLevel()) {
             this._nDeathZSpeed = 0;
             this.entity.position.z = Z_FLOOR_LEVEL;
@@ -140,7 +140,7 @@ class PlayerThinker extends FPSControlThinker {
         }
     }
 
-    $isOnFloor() {
+    $isOnFloor(): boolean {
         return this.isHeightAtFloorLevel();
     }
 }
